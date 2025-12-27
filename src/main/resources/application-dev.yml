@@ -1,0 +1,19 @@
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update   # Hibernate can update DB automatically in dev if needed
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true  # remove any baseline conflicts
+    locations: classpath:db/migration
+    validate-on-migrate: true
+
+logging:
+  level:
+    com.shakhawat.meal: DEBUG

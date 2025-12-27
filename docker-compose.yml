@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: meal-management-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: meal_management
+      MYSQL_USER: mealuser
+      MYSQL_PASSWORD: mealpassword
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - meal-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: meal-management-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - meal-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  app:
+    build: .
+    container_name: meal-management-app
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: jdbc:mysql://mysql:3306/meal_management?createDatabaseIfNotExist=true
+      DB_USERNAME: mealuser
+      DB_PASSWORD: mealpassword
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: ProductionSecretKeyThatShouldBeVeryLongAndSecure!@#$%^&*()
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - meal-network
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+
+networks:
+  meal-network:
+    driver: bridge
