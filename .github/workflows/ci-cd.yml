@@ -41,6 +41,9 @@ jobs:
       - name: Run tests
         run: ./mvnw clean verify --no-transfer-progress -B
 
+      - name: Build and test
+        run: mvn clean verify
+
       - name: Generate code coverage report
         run: mvn jacoco:report
 
