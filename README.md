@@ -7,7 +7,7 @@
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
 [![Coverage](https://img.shields.io/badge/coverage-85%25-green.svg)]()
 
-A comprehensive RESTful API for managing employee meal orders in corporate cafeterias. Built with modern Java 25, Spring Boot 4.0.1, and following industry best practices including TDD, Clean Architecture, and SOLID principles.
+A comprehensive, production-ready RESTful API for managing employee meal orders in corporate cafeterias. Built with modern Java 25, Spring Boot 4.0.1, and following industry best practices including TDD, Clean Architecture, and SOLID principles.
 
 ## 📋 Table of Contents
 
@@ -29,6 +29,7 @@ A comprehensive RESTful API for managing employee meal orders in corporate cafet
 
 ### Core Functionality
 - 🔐 **JWT Authentication & Authorization** - Secure token-based authentication with role-based access control
+- 🔄 **Refresh Token System** - Automatic token refresh with 15-minute access tokens and 30-day refresh tokens
 - 👥 **Employee Management** - Complete CRUD operations for employee records
 - 🍲 **Meal Catalog** - Comprehensive meal management with types (Breakfast, Lunch, Dinner, Snack)
 - 📦 **Order Management** - Full order lifecycle from creation to delivery
@@ -78,7 +79,7 @@ A comprehensive RESTful API for managing employee meal orders in corporate cafet
 meal-management/
 ├── src/
 │   ├── main/
-│   │   ├── java/com/company/meal/
+│   │   ├── java/com/shakhawatmollah/meal/
 │   │   │   ├── config/          # Configuration classes
 │   │   │   ├── controller/      # REST controllers
 │   │   │   ├── dto/             # Data Transfer Objects
@@ -216,13 +217,53 @@ Once the application is running, access the interactive API documentation:
 
 #### Authentication
 ```bash
-# Login
+# Login (Returns access token + refresh token)
 POST /api/v1/auth/login
 Content-Type: application/json
 
 {
-  "email": "admin@company.com",
-  "password": "Admin@123"
+  "email": "admin@shakhawatmollah.com",
+  "password": "12345678"
+}
+
+Response:
+{
+  "success": true,
+  "data": {
+    "accessToken": "eyJhbGciOiJIUzI1NiIs...",
+    "refreshToken": "550e8400-e29b-41d4-a716-446655440000",
+    "tokenType": "Bearer",
+    "expiresIn": 900,
+    "email": "admin@shakhawatmollah.com",
+    "roles": ["ROLE_ADMIN"]
+  }
+}
+
+# Refresh Access Token
+POST /api/v1/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "550e8400-e29b-41d4-a716-446655440000"
+}
+
+Response:
+{
+  "success": true,
+  "data": {
+    "accessToken": "eyJhbGciOiJIUzI1NiIs...",  // New access token
+    "refreshToken": "660e8400-e29b-41d4-a716-446655440111",  // New refresh token
+    "tokenType": "Bearer",
+    "expiresIn": 900
+  }
+}
+
+# Logout (Revoke refresh token)
+POST /api/v1/auth/logout
+Content-Type: application/json
+
+{
+  "refreshToken": "550e8400-e29b-41d4-a716-446655440000"
 }
 
 # Register
@@ -231,7 +272,7 @@ Content-Type: application/json
 
 {
   "name": "John Doe",
-  "email": "john@company.com",
+  "email": "john@shakhawatmollah.com",
   "password": "SecurePass@123",
   "department": "Engineering"
 }
@@ -281,8 +322,8 @@ Authorization: Bearer {token}
 
 ```
 Admin Account:
-Email: admin@company.com
-Password: Admin@123
+Email: admin@shakhawatmollah.com
+Password: 12345678
 Role: ROLE_ADMIN
 
 Sample Meals are pre-loaded in the database.
@@ -305,8 +346,15 @@ Sample Meals are pre-loaded in the database.
 │ budget      │         │ created_at  │         │ capacity    │
 │ ...         │         └─────────────┘         └─────────────┘
 └─────────────┘
-      │
-      │
+      │                 ┌─────────────┐
+      │                 │refresh_     │
+      │                 │  tokens     │
+      │                 ├─────────────┤
+      └────────────────►│employee_id  │
+                        │ token       │
+                        │ expiry_date │
+                        │ revoked     │
+                        └─────────────┘
       ▼
 ┌─────────────┐
 │employee_    │
@@ -335,6 +383,12 @@ Sample Meals are pre-loaded in the database.
 - Status management (PENDING → CONFIRMED → PREPARED → DELIVERED)
 - Unique constraint: one order per employee/meal/date
 
+**refresh_tokens**
+- Secure refresh token storage
+- Token rotation support
+- Automatic expiration handling
+- One active token per employee
+
 **audit_logs**
 - Complete activity tracking
 - User action history
@@ -342,20 +396,36 @@ Sample Meals are pre-loaded in the database.
 
 ## 🔐 Security
 
-### Authentication Flow
+### Authentication Flow with Refresh Tokens
 
 ```
-1. User sends credentials → POST /api/v1/auth/login
+1. User Login
+   ↓
 2. System validates credentials
-3. JWT token generated and returned
-4. Client includes token in subsequent requests
-   Authorization: Bearer {token}
-5. System validates token for each request
+   ↓
+3. Generate Access Token (15 min) + Refresh Token (30 days)
+   ↓
+4. Client stores both tokens
+   ↓
+5. API calls use Access Token (Authorization: Bearer {token})
+   ↓
+6. When Access Token expires → Use Refresh Token to get new tokens
+   ↓
+7. Logout revokes Refresh Token
 ```
+
+### Token Strategy
+
+| Token Type | Lifetime | Purpose | Storage |
+|------------|----------|---------|---------|
+| **Access Token** | 15 minutes | API authentication | Memory/SessionStorage |
+| **Refresh Token** | 30 days | Token renewal | HttpOnly Cookie (recommended) |
 
 ### Security Features
 
-- ✅ **JWT Token Authentication** - Stateless authentication
+- ✅ **JWT Token Authentication** - Stateless authentication with short-lived tokens
+- ✅ **Refresh Token Rotation** - New refresh token issued on each refresh for enhanced security
+- ✅ **Token Revocation** - Immediate invalidation on logout
 - ✅ **Password Encryption** - BCrypt with strength 12
 - ✅ **Role-Based Access Control** - Fine-grained permissions
 - ✅ **Account Locking** - After 5 failed login attempts
@@ -499,7 +569,8 @@ spec:
 | `REDIS_HOST` | Redis server host | localhost |
 | `REDIS_PORT` | Redis server port | 6379 |
 | `JWT_SECRET` | JWT signing secret | (auto-generated) |
-| `JWT_EXPIRATION` | Token expiration (ms) | 86400000 (24h) |
+| `JWT_EXPIRATION` | Access token expiration (ms) | 900000 (15 min) |
+| `JWT_REFRESH_EXPIRATION` | Refresh token expiration (ms) | 2592000000 (30 days) |
 
 ## ⚡ Performance
 
@@ -578,7 +649,7 @@ spring:
       enabled: true
 logging:
   level:
-    com.company.meal: DEBUG
+    com.shakhawat.meal: DEBUG
 ```
 
 **Production (`application-prod.yml`)**
@@ -590,7 +661,7 @@ spring:
       ddl-auto: validate
 logging:
   level:
-    com.company.meal: INFO
+    com.shakhawat.meal: INFO
 ```
 
 ## 📦 Postman Collection
@@ -641,13 +712,35 @@ We welcome contributions! Please follow these guidelines:
 - Performance tests for critical paths
 - Maintain >85% code coverage
 
+## 📝 Changelog
+
+**Initial Release**
+- ✅ Complete meal management system
+- ✅ JWT authentication with refresh token support
+- ✅ Automatic token rotation for enhanced security
+- ✅ Order management with business rules
+- ✅ Budget tracking and limits
+- ✅ Inventory management
+- ✅ Redis caching
+- ✅ Comprehensive testing (100+ tests)
+- ✅ Docker support
+- ✅ API documentation (Swagger)
+- ✅ Production-ready monitoring
+
+**Security Enhancements**
+- Short-lived access tokens (15 minutes)
+- Long-lived refresh tokens (30 days)
+- Token rotation on refresh
+- Scheduled cleanup of expired tokens
+- Immediate revocation on logout
+
 ## 🐛 Known Issues
 
 None at this time. Please report issues on GitHub.
 
 ## 📄 License
 
-This project is licensed under the Apache License 2.0
+This project is licensed under the Apache License 2.0.
 
 ## 👥 Team
 
@@ -658,7 +751,6 @@ This project is licensed under the Apache License 2.0
 
 - **Documentation**: [GitHub Wiki](https://github.com/shakhawatmollah/meal-management-system/wiki)
 - **Issues**: [GitHub Issues](https://github.com/shakhawatmollah/meal-management-system/issues)
-- **Email**: support@company.com
 
 ## 🙏 Acknowledgments
 
@@ -667,8 +759,6 @@ This project is licensed under the Apache License 2.0
 - MySQL Community
 - Redis Team
 - Open Source Community
-
----
 
 ⭐ **Star us on GitHub** if you find this project useful!
 
