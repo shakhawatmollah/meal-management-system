@@ -129,7 +129,7 @@ meal-management/
 
 ### Prerequisites
 
-- **Java 21** or higher
+- **Java 25** or higher
 - **Maven 3.8+**
 - **MySQL 8.0** (or use Docker)
 - **Redis 7.0** (optional, for caching)
