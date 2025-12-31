@@ -1,12 +1,19 @@
 package com.shakhawat.meal.controller;
 
+import com.shakhawat.meal.config.SecurityConfig;
 import com.shakhawat.meal.dto.MealOrderDTO;
 import com.shakhawat.meal.entity.OrderStatus;
+import com.shakhawat.meal.security.JwtAuthenticationFilter;
 import com.shakhawat.meal.service.MealOrderService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
@@ -18,11 +25,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(MealOrderController.class)
+@SpringBootTest
 @ActiveProfiles("test")
-@WithMockUser(roles = "EMPLOYEE")
+@AutoConfigureMockMvc(addFilters = false)
 class MealOrderControllerTest {
 
     @Autowired
@@ -33,6 +41,9 @@ class MealOrderControllerTest {
 
     @MockitoBean
     private MealOrderService orderService;
+
+    @MockitoBean  // Mock the JwtAuthenticationFilter
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Nested
     @DisplayName("Create Order Tests")
@@ -110,7 +121,8 @@ class MealOrderControllerTest {
 
             // When & Then
             mockMvc.perform(delete("/api/v1/orders/1")
-                            .with(csrf()))
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andDo(print())
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))
                     .andExpect(jsonPath("$.message").value("Order cancelled successfully"));

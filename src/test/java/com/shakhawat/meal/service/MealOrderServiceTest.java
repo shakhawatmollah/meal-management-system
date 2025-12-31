@@ -2,6 +2,8 @@ package com.shakhawat.meal.service;
 
 import com.shakhawat.meal.dto.*;
 import com.shakhawat.meal.entity.*;
+import com.shakhawat.meal.exception.DuplicateResourceException;
+import com.shakhawat.meal.exception.InvalidOperationException;
 import com.shakhawat.meal.exception.ResourceNotFoundException;
 import com.shakhawat.meal.repository.*;
 import com.shakhawat.meal.util.EntityMapper;
@@ -223,7 +225,7 @@ class MealOrderServiceTest {
 
             when(employeeRepository.findById(1L)).thenReturn(Optional.of(employee));
             when(mealRepository.findById(1L)).thenReturn(Optional.of(meal));
-            when(orderRepository.existsByEmployeeIdAndMealIdAndOrderDate(any(), any(), any()))
+            lenient().when(orderRepository.existsByEmployeeIdAndMealIdAndOrderDate(any(), any(), any()))
                     .thenReturn(false);
 
             // When & Then
@@ -240,10 +242,13 @@ class MealOrderServiceTest {
 
             when(employeeRepository.findById(1L)).thenReturn(Optional.of(employee));
             when(mealRepository.findById(1L)).thenReturn(Optional.of(meal));
-            when(orderRepository.existsByEmployeeIdAndMealIdAndOrderDate(any(), any(), any()))
+
+            lenient().when(orderRepository.existsByEmployeeIdAndMealIdAndOrderDate(any(), any(), any()))
                     .thenReturn(false);
-            when(orderRepository.countByEmployeeIdAndMonth(any(), anyInt(), anyInt()))
+
+            lenient().when(orderRepository.countByEmployeeIdAndMonth(any(), anyInt(), anyInt()))
                     .thenReturn(5L);
+
 
             // When & Then
             assertThatThrownBy(() -> orderService.createOrder(orderRequest))

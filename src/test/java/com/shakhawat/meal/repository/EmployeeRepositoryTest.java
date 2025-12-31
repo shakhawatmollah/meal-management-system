@@ -3,12 +3,15 @@ package com.shakhawat.meal.repository;
 import com.shakhawat.meal.entity.Employee;
 import com.shakhawat.meal.entity.EmployeeStatus;
 import com.shakhawat.meal.entity.Role;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.test.context.ActiveProfiles;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Optional;
 import static org.assertj.core.api.Assertions.*;
 
@@ -36,6 +39,7 @@ class EmployeeRepositoryTest {
                 .monthlyBudget(new BigDecimal("500.00"))
                 .currentMonthSpent(BigDecimal.ZERO)
                 .monthlyOrderLimit(30)
+                .createdAt(LocalDateTime.now())
                 .build();
         testEmployee.addRole(Role.ROLE_EMPLOYEE);
     }
@@ -160,21 +164,90 @@ class EmployeeRepositoryTest {
     @Order(8)
     @DisplayName("Should handle optimistic locking")
     void shouldHandleOptimisticLocking() {
-        // Given
+        // Given - persist employee
         Employee saved = entityManager.persistAndFlush(testEmployee);
+        Long employeeId = saved.getId();
         entityManager.clear();
 
-        // When - Simulate concurrent updates
-        Employee employee1 = entityManager.find(Employee.class, saved.getId());
-        Employee employee2 = entityManager.find(Employee.class, saved.getId());
-
+        // When - load and update first instance
+        Employee employee1 = entityManager.find(Employee.class, employeeId);
         employee1.setName("Updated Name 1");
         entityManager.flush();
+        entityManager.clear(); // Commit first update
 
+        // Load again and try to update
+        Employee employee2 = entityManager.find(Employee.class, employeeId);
+        Long originalVersion = employee2.getVersion();
+
+        // Manually set version back to simulate stale data
+        entityManager.detach(employee2);
+        employee2.setVersion(originalVersion - 1); // Force stale version
         employee2.setName("Updated Name 2");
 
-        // Then
-        assertThatThrownBy(() -> entityManager.flush())
-                .isInstanceOf(jakarta.persistence.OptimisticLockException.class);
+        // Then - Should throw optimistic locking exception
+        assertThatThrownBy(() -> {
+            entityManager.merge(employee2);
+            entityManager.flush();
+        })
+                .isInstanceOfAny(
+                        ObjectOptimisticLockingFailureException.class,
+                        jakarta.persistence.OptimisticLockException.class
+                );
     }
+
+    @Test
+    void shouldIncrementVersionOnUpdate() {
+        // Given: Create an employee
+        Employee employee = Employee.builder()
+                .name("Version Test")
+                .email("version@company.com")
+                .password("password123")
+                .department("IT")
+                .status(EmployeeStatus.ACTIVE)
+                .monthlyBudget(new BigDecimal("500.00"))
+                .monthlyOrderLimit(30)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        Employee saved = employeeRepository.saveAndFlush(employee);
+        Long initialVersion = saved.getVersion();
+        assertThat(initialVersion).isNotNull();
+
+        entityManager.clear();
+
+        // When: Update the employee
+        Employee fetched = employeeRepository.findById(saved.getId()).orElseThrow();
+        fetched.setDepartment("Updated Department");
+        Employee updated = employeeRepository.saveAndFlush(fetched);
+
+        // Then: Version should be incremented
+        assertThat(updated.getVersion()).isEqualTo(initialVersion + 1);
+    }
+
+    @Test
+    void shouldAllowConcurrentReadOperations() {
+        // Given: Create an employee
+        Employee employee = Employee.builder()
+                .name("Concurrent Read Test")
+                .email("concurrent@company.com")
+                .password("password123")
+                .department("IT")
+                .status(EmployeeStatus.ACTIVE)
+                .monthlyBudget(new BigDecimal("500.00"))
+                .monthlyOrderLimit(30)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        Employee saved = employeeRepository.saveAndFlush(employee);
+        entityManager.clear();
+
+        // When: Multiple reads occur
+        Employee read1 = employeeRepository.findById(saved.getId()).orElseThrow();
+        Employee read2 = employeeRepository.findById(saved.getId()).orElseThrow();
+
+        // Then: Both should have the same version (no conflict)
+        assertThat(read1.getVersion()).isEqualTo(read2.getVersion());
+        assertThat(read1.getDepartment()).isEqualTo(read2.getDepartment());
+    }
+
 }

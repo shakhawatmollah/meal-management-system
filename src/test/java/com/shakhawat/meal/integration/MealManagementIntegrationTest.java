@@ -16,6 +16,8 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -59,15 +61,16 @@ class MealManagementIntegrationTest {
         Employee admin = Employee.builder()
                 .name("Admin User")
                 .email("admin@test.com")
-                .password(passwordEncoder.encode("Admin@123"))
+                .password(passwordEncoder.encode("12345678"))
                 .department("IT")
                 .status(EmployeeStatus.ACTIVE)
+                .createdAt(LocalDateTime.now())
                 .build();
         admin.addRole(Role.ROLE_ADMIN);
         employeeRepository.save(admin);
 
         // Login as admin to get token
-        AuthDTO.LoginRequest loginRequest = new AuthDTO.LoginRequest("admin@test.com", "Admin@123");
+        AuthDTO.LoginRequest loginRequest = new AuthDTO.LoginRequest("admin@test.com", "12345678");
 
         MvcResult result = mockMvc.perform(post("/api/v1/auth/login")
                         .with(csrf())
@@ -77,7 +80,7 @@ class MealManagementIntegrationTest {
                 .andReturn();
 
         String response = result.getResponse().getContentAsString();
-        adminToken = objectMapper.readTree(response).get("data").get("token").asText();
+        adminToken = objectMapper.readTree(response).get("data").get("accessToken").asText();
     }
 
     @Test
@@ -114,7 +117,7 @@ class MealManagementIntegrationTest {
                 .andReturn();
 
         String loginResponse = loginResult.getResponse().getContentAsString();
-        String employeeToken = objectMapper.readTree(loginResponse).get("data").get("token").asText();
+        String employeeToken = objectMapper.readTree(loginResponse).get("data").get("accessToken").asText();
 
         // Step 3: Admin creates a meal
         MealDTO.Request mealRequest = MealDTO.Request.builder()
@@ -213,6 +216,7 @@ class MealManagementIntegrationTest {
                 .status(EmployeeStatus.ACTIVE)
                 .monthlyBudget(new BigDecimal("20.00")) // Only $20
                 .monthlyOrderLimit(2) // Only 2 orders
+                .createdAt(LocalDateTime.now())
                 .build();
         employee.addRole(Role.ROLE_EMPLOYEE);
         Employee savedEmployee = employeeRepository.save(employee);
@@ -224,6 +228,7 @@ class MealManagementIntegrationTest {
                 .type(MealType.DINNER)
                 .price(new BigDecimal("15.00"))
                 .available(true)
+                .createdAt(LocalDateTime.now())
                 .build();
         Meal savedMeal = mealRepository.save(meal);
 
@@ -237,7 +242,7 @@ class MealManagementIntegrationTest {
                 .andReturn();
 
         String token = objectMapper.readTree(loginResult.getResponse().getContentAsString())
-                .get("data").get("token").asText();
+                .get("data").get("accessToken").asText();
 
         // First order should succeed
         MealOrderDTO.Request order1 = MealOrderDTO.Request.builder()
@@ -282,6 +287,7 @@ class MealManagementIntegrationTest {
                 .password(passwordEncoder.encode("Password@123"))
                 .department("IT")
                 .status(EmployeeStatus.ACTIVE)
+                .createdAt(LocalDateTime.now())
                 .build();
         employee.addRole(Role.ROLE_EMPLOYEE);
         Employee savedEmployee = employeeRepository.save(employee);
@@ -294,6 +300,7 @@ class MealManagementIntegrationTest {
                 .price(new BigDecimal("10.00"))
                 .available(true)
                 .dailyCapacity(2) // Only 2 available
+                .createdAt(LocalDateTime.now())
                 .build();
         Meal savedMeal = mealRepository.save(meal);
 
@@ -307,7 +314,7 @@ class MealManagementIntegrationTest {
                 .andReturn();
 
         String token = objectMapper.readTree(loginResult.getResponse().getContentAsString())
-                .get("data").get("token").asText();
+                .get("data").get("accessToken").asText();
 
         LocalDate orderDate = LocalDate.now().plusDays(1);
 
@@ -333,6 +340,7 @@ class MealManagementIntegrationTest {
                 .password(passwordEncoder.encode("Password@123"))
                 .department("HR")
                 .status(EmployeeStatus.ACTIVE)
+                .createdAt(LocalDateTime.now())
                 .build();
         employee2.addRole(Role.ROLE_EMPLOYEE);
         Employee savedEmployee2 = employeeRepository.save(employee2);

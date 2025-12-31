@@ -3,6 +3,7 @@ package com.shakhawat.meal.util;
 import com.shakhawat.meal.entity.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public class TestDataBuilder {
 
@@ -18,6 +19,7 @@ public class TestDataBuilder {
                 .monthlyOrderLimit(30)
                 .accountNonLocked(true)
                 .failedLoginAttempts(0)
+                .createdAt(LocalDateTime.now())
                 .deleted(false);
     }
 
@@ -28,6 +30,7 @@ public class TestDataBuilder {
                 .type(MealType.LUNCH)
                 .price(new BigDecimal("10.00"))
                 .available(true)
+                .createdAt(LocalDateTime.now())
                 .dailyCapacity(100);
     }
 
@@ -38,6 +41,7 @@ public class TestDataBuilder {
                 .orderDate(LocalDate.now().plusDays(1))
                 .quantity(1)
                 .totalPrice(meal.getPrice())
+                .createdAt(LocalDateTime.now())
                 .status(OrderStatus.PENDING);
     }
 }

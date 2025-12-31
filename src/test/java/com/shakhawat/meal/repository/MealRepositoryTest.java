@@ -8,6 +8,7 @@ import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 import org.springframework.test.context.ActiveProfiles;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import static org.assertj.core.api.Assertions.*;
 
@@ -31,6 +32,7 @@ class MealRepositoryTest {
                 .price(new BigDecimal("8.50"))
                 .available(true)
                 .dailyCapacity(100)
+                .createdAt(LocalDateTime.now())
                 .build();
 
         Meal lunch = Meal.builder()
@@ -40,6 +42,7 @@ class MealRepositoryTest {
                 .price(new BigDecimal("12.00"))
                 .available(true)
                 .dailyCapacity(150)
+                .createdAt(LocalDateTime.now())
                 .build();
 
         Meal dinner = Meal.builder()
@@ -49,6 +52,7 @@ class MealRepositoryTest {
                 .price(new BigDecimal("15.00"))
                 .available(false)
                 .dailyCapacity(80)
+                .createdAt(LocalDateTime.now())
                 .build();
 
         entityManager.persist(breakfast);
@@ -108,6 +112,7 @@ class MealRepositoryTest {
                 .price(new BigDecimal("5.00"))
                 .available(true)
                 .dailyCapacity(200)
+                .createdAt(LocalDateTime.now())
                 .build();
 
         // When

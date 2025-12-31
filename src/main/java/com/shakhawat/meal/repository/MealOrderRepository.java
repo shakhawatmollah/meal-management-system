@@ -1,5 +1,6 @@
 package com.shakhawat.meal.repository;
 
+import com.shakhawat.meal.entity.Employee;
 import com.shakhawat.meal.entity.MealOrder;
 import com.shakhawat.meal.entity.OrderStatus;
 import org.springframework.data.domain.Page;
@@ -49,4 +50,8 @@ public interface MealOrderRepository extends JpaRepository<MealOrder, Long> {
             @Param("month") int month);
 
     long countByStatus(OrderStatus status);
+
+    MealOrder findByEmployee(Employee employee);
+
+    long countByOrderDate(LocalDate orderDate);
 }

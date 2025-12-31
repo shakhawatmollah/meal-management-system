@@ -190,6 +190,24 @@ class EmployeeServiceTest {
         }
     }
 
+    @Test
+    @DisplayName("Should fail when updating with existing email")
+    void shouldFailWhenEmailAlreadyExists() {
+        employee.setEmail("old@example.com");
+
+        when(employeeRepository.findById(1L)).thenReturn(Optional.of(employee));
+        when(employeeRepository.existsByEmail("new@example.com")).thenReturn(true);
+
+        EmployeeDTO.Request updateRequest = EmployeeDTO.Request.builder()
+                .email("new@example.com")
+                .build();
+
+        assertThatThrownBy(() ->
+                employeeService.updateEmployee(1L, updateRequest))
+                .isInstanceOf(DuplicateResourceException.class);
+    }
+
+
     @Nested
     @DisplayName("Update Employee Tests")
     class UpdateEmployeeTests {
@@ -199,7 +217,6 @@ class EmployeeServiceTest {
         void shouldUpdateEmployeeSuccessfully() {
             // Given
             when(employeeRepository.findById(1L)).thenReturn(Optional.of(employee));
-            when(employeeRepository.existsByEmail(anyString())).thenReturn(false);
             when(employeeRepository.save(any())).thenReturn(employee);
             when(entityMapper.toDto(any(Employee.class))).thenReturn(employeeResponse);
 
