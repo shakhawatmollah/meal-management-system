@@ -23,12 +23,32 @@ public class AuthDTO {
     @Builder
     @AllArgsConstructor
     public static class LoginResponse {
-        private String token;
-        private String type = "Bearer";
+        private String accessToken;
+        private String refreshToken;
+        private String tokenType = "Bearer";
+        private Long expiresIn; // seconds
         private Long id;
         private String email;
         private String name;
         private Set<String> roles;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class RefreshTokenRequest {
+        @NotBlank(message = "Refresh token is required")
+        private String refreshToken;
+    }
+
+    @Data
+    @Builder
+    @AllArgsConstructor
+    public static class RefreshTokenResponse {
+        private String accessToken;
+        private String refreshToken;
+        private String tokenType = "Bearer";
+        private Long expiresIn; // seconds
     }
 
     @Data
@@ -49,5 +69,13 @@ public class AuthDTO {
 
         @NotBlank(message = "Department is required")
         private String department;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class LogoutRequest {
+        @NotBlank(message = "Refresh token is required")
+        private String refreshToken;
     }
 }

@@ -28,6 +28,30 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("Login successful", response));
     }
 
+    @Operation(
+            summary = "Refresh access token",
+            description = "Get new access token using refresh token"
+    )
+    @PostMapping("/refresh")
+    public ResponseEntity<ApiResponse<AuthDTO.RefreshTokenResponse>> refreshToken(
+            @Valid @RequestBody AuthDTO.RefreshTokenRequest request) {
+        AuthDTO.RefreshTokenResponse response = authService.refreshToken(request);
+        return ResponseEntity.ok(
+                ApiResponse.success("Token refreshed successfully", response));
+    }
+
+    @Operation(
+            summary = "User logout",
+            description = "Logout user and revoke refresh token"
+    )
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<Void>> logout(
+            @Valid @RequestBody AuthDTO.LogoutRequest request) {
+        authService.logout(request);
+        return ResponseEntity.ok(
+                ApiResponse.success("Logout successful", null));
+    }
+
     @Operation(summary = "User registration", description = "Register a new employee")
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<EmployeeDTO.Response>> register(

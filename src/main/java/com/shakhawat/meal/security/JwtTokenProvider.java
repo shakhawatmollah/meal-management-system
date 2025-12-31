@@ -3,6 +3,7 @@ package com.shakhawat.meal.security;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
@@ -12,6 +13,7 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Date;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Component
@@ -21,19 +23,32 @@ public class JwtTokenProvider {
     @Value("${jwt.secret:MySecretKeyForJWTTokenGenerationThatIsAtLeast256BitsLong!@#$%^&*()}")
     private String jwtSecret;
 
-    @Value("${jwt.expiration:86400000}") // 24 hours
+    @Value("${jwt.expiration:900000}") // 15 minutes
     private long jwtExpiration;
+
+    @Getter
+    @Value("${jwt.refresh-expiration:2592000000}") // 30 days
+    private long refreshTokenExpiration;
 
     private SecretKey key;
 
     @PostConstruct
     public void init() {
+        if (jwtSecret == null || jwtSecret.isEmpty()) {
+            throw new IllegalArgumentException("JWT secret key must be configured.");
+        }
         this.key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateToken(Authentication authentication) {
+    /**
+     * Generate access token (short-lived)
+     */
+    public String generateAccessToken(Authentication authentication) {
         String username = authentication.getName();
         Instant now = Instant.now();
+
+        Instant expirationTime = now.plusMillis(jwtExpiration);
+        Date expirationDate = Date.from(expirationTime);
 
         String roles = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
@@ -42,10 +57,35 @@ public class JwtTokenProvider {
         return Jwts.builder()
                 .subject(username)
                 .claim("roles", roles)
+                .claim("type", "access")
                 .issuedAt(Date.from(now))
-                .expiration(Date.from(now.plusMillis(jwtExpiration)))
+                .expiration(expirationDate)
                 .signWith(key)
                 .compact();
+    }
+
+    /**
+     * Generate access token from email
+     */
+    public String generateAccessTokenFromEmail(String email, String roles) {
+        Instant now = Instant.now();
+        Instant expiryInstant = now.plusMillis(jwtExpiration);
+        Date expiryDate = Date.from(expiryInstant);
+        return Jwts.builder()
+                .subject(email)
+                .claim("roles", roles)
+                .claim("type", "access")
+                .issuedAt(Date.from(now))
+                .expiration(expiryDate)
+                .signWith(key)
+                .compact();
+    }
+
+    /**
+     * Generate refresh token (long-lived)
+     */
+    public String generateRefreshToken() {
+        return UUID.randomUUID().toString();
     }
 
     public String getUsernameFromToken(String token) {
