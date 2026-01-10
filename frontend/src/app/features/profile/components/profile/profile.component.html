@@ -1,0 +1,66 @@
+<div class="profile-container">
+  <mat-card class="profile-card">
+    <mat-card-header>
+      <mat-card-title class="profile-title">
+        <mat-icon>account_circle</mat-icon>
+        User Profile
+      </mat-card-title>
+    </mat-card-header>
+    
+    <mat-card-content>
+      <form class="profile-form" *ngIf="user">
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Name</mat-label>
+            <input matInput [(ngModel)]="user.name" name="name" [readonly]="!isEditing">
+          </mat-form-field>
+        </div>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Email</mat-label>
+            <input matInput [(ngModel)]="user.email" name="email" type="email" [readonly]="!isEditing">
+          </mat-form-field>
+        </div>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="half-width">
+            <mat-label>Role</mat-label>
+            <input matInput [(ngModel)]="user.role" name="role" [readonly]="!isEditing">
+          </mat-form-field>
+          
+          <mat-form-field appearance="outline" class="half-width">
+            <mat-label>Department</mat-label>
+            <input matInput [(ngModel)]="user.department" name="department" [readonly]="!isEditing">
+          </mat-form-field>
+        </div>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Phone</mat-label>
+            <input matInput [(ngModel)]="user.phone" name="phone" [readonly]="!isEditing">
+          </mat-form-field>
+        </div>
+      </form>
+    </mat-card-content>
+
+    <mat-card-actions class="profile-actions">
+      <button mat-raised-button color="primary" (click)="enableEdit()" *ngIf="!isEditing">
+        <mat-icon>edit</mat-icon>
+        Edit Profile
+      </button>
+      
+      <div class="edit-actions" *ngIf="isEditing">
+        <button mat-raised-button color="primary" (click)="saveProfile()">
+          <mat-icon>save</mat-icon>
+          Save
+        </button>
+        
+        <button mat-stroked-button color="warn" (click)="cancelEdit()">
+          <mat-icon>cancel</mat-icon>
+          Cancel
+        </button>
+      </div>
+    </mat-card-actions>
+  </mat-card>
+</div>

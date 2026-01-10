@@ -1,0 +1,73 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Roboto', sans-serif;
+  background-color: #fafafa;
+  color: #333;
+}
+
+.mat-mdc-form-field {
+  --mdc-outlined-text-field-hover-label-text-color: rgba(0, 0, 0, 0.87);
+  --mdc-outlined-text-field-focus-label-text-color: #667eea;
+  --mdc-outlined-text-field-outline-hover-state-layer-color: rgba(102, 126, 234, 0.12);
+  --mdc-outlined-text-field-outline-focus-state-layer-color: rgba(102, 126, 234, 0.2);
+}
+
+.mat-mdc-button {
+  --mdc-protected-button-container-color: #667eea;
+  --mdc-protected-button-label-text-color: white;
+  --mdc-protected-button-hover-container-color: #5a67d8;
+  --mdc-protected-button-hover-label-text-color: white;
+  --mdc-protected-button-focus-container-color: #455a64;
+  --mdc-protected-button-focus-label-text-color: white;
+}
+
+.mat-mdc-card {
+  --mdc-elevated-card-container-color: white;
+  --mdc-elevated-card-container-elevation: 0 2px 4px rgba(0, 0, 0, 0.12);
+}
+
+.mat-mdc-table {
+  --mdc-table-container-divider-color: rgba(0, 0, 0, 0.12);
+}
+
+.mat-mdc-paginator {
+  --mdc-text-button-icon-label-text-size: 14px;
+}
+
+/* Custom scrollbar styles */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .mat-mdc-button {
+    --mdc-protected-button-container-shape-radius: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .mat-mdc-button {
+    --mdc-protected-button-container-shape-radius: 16px;
+  }
+}
