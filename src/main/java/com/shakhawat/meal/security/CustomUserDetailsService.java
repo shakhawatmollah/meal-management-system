@@ -2,9 +2,7 @@ package com.shakhawat.meal.security;
 
 import com.shakhawat.meal.entity.Employee;
 import com.shakhawat.meal.repository.EmployeeRepository;
-import io.jsonwebtoken.*;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;

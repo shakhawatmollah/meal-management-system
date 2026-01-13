@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import java.util.List;
 
@@ -22,5 +23,17 @@ public interface MealRepository extends JpaRepository<Meal, Long> {
 
     @Query("SELECT m FROM Meal m WHERE m.type = :type AND m.available = true")
     List<Meal> findAvailableMealsByType(MealType type);
+
+    // Report-specific queries
+    @Query("SELECT COUNT(m) FROM Meal m WHERE m.available = true")
+    Long countAvailableMeals();
+
+    @Query("SELECT m.type, COUNT(m.id), COUNT(CASE WHEN m.available = true THEN 1 END) " +
+           "FROM Meal m " +
+           "GROUP BY m.type")
+    List<Object[]> findAvailabilityStatsByType();
+
+    @Query("SELECT m.type, COUNT(m.id) FROM Meal m WHERE m.available = true GROUP BY m.type")
+    List<Object[]> findAvailableMealsByTypeStats();
 }
 

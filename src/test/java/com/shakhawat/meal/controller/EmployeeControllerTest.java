@@ -1,7 +1,6 @@
 package com.shakhawat.meal.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.shakhawat.meal.config.SecurityConfig;
 import com.shakhawat.meal.dto.EmployeeDTO;
 import com.shakhawat.meal.entity.EmployeeStatus;
 import com.shakhawat.meal.exception.DuplicateResourceException;
@@ -12,10 +11,6 @@ import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.FilterType;
-import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.*;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.userdetails.UserDetailsService;

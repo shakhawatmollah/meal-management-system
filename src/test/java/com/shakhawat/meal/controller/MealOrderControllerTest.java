@@ -1,6 +1,5 @@
 package com.shakhawat.meal.controller;
 
-import com.shakhawat.meal.config.SecurityConfig;
 import com.shakhawat.meal.dto.MealOrderDTO;
 import com.shakhawat.meal.entity.OrderStatus;
 import com.shakhawat.meal.security.JwtAuthenticationFilter;
@@ -10,10 +9,6 @@ import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.FilterType;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;

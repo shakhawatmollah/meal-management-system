@@ -3,7 +3,6 @@ package com.shakhawat.meal.repository;
 import com.shakhawat.meal.entity.Employee;
 import com.shakhawat.meal.entity.EmployeeStatus;
 import com.shakhawat.meal.entity.Role;
-import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
