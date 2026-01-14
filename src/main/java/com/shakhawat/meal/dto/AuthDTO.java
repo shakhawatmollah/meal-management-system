@@ -25,6 +25,7 @@ public class AuthDTO {
     public static class LoginResponse {
         private String accessToken;
         private String refreshToken;
+        @Builder.Default
         private String tokenType = "Bearer";
         private Long expiresIn; // seconds
         private Long id;
@@ -47,6 +48,7 @@ public class AuthDTO {
     public static class RefreshTokenResponse {
         private String accessToken;
         private String refreshToken;
+        @Builder.Default
         private String tokenType = "Bearer";
         private Long expiresIn; // seconds
     }

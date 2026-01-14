@@ -1,6 +1,5 @@
 package com.shakhawat.meal.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.shakhawat.meal.dto.reports.*;
 import com.shakhawat.meal.service.ReportService;
 import org.junit.jupiter.api.Test;
@@ -29,14 +28,11 @@ class ReportControllerTest {
     @MockitoBean
     private ReportService reportService;
 
-    @Autowired
-    private ObjectMapper objectMapper;
-
     @Test
     @WithMockUser(roles = {"ADMIN"})
     void shouldGenerateDailyReport() throws Exception {
         // Given
-        LocalDate testDate = LocalDate.of(2024, 1, 15);
+        LocalDate testDate = LocalDate.of(2026, 1, 15);
         DailyOperationsReport mockReport = DailyOperationsReport.builder()
             .reportDate(testDate)
             .totalOrders(10)
@@ -56,7 +52,7 @@ class ReportControllerTest {
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.reportDate").value("2024-01-15"))
+                .andExpect(jsonPath("$.data.reportDate").value("2026-01-15"))
                 .andExpect(jsonPath("$.data.totalOrders").value(10))
                 .andExpect(jsonPath("$.data.uniqueEmployees").value(5))
                 .andExpect(jsonPath("$.data.dailyRevenue").value(150.0));
@@ -66,7 +62,7 @@ class ReportControllerTest {
     @WithMockUser(roles = {"CAFETERIA_STAFF"})
     void shouldGenerateMonthlyReport() throws Exception {
         // Given
-        int year = 2024;
+        int year = 2026;
         int month = 1;
         MonthlyFinancialReport mockReport = MonthlyFinancialReport.builder()
             .reportPeriod(LocalDate.of(year, month, 1))
@@ -85,7 +81,7 @@ class ReportControllerTest {
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.reportPeriod").value("2024-01-01"))
+                .andExpect(jsonPath("$.data.reportPeriod").value("2026-01-01"))
                 .andExpect(jsonPath("$.data.monthlyRevenue").value(5000.0))
                 .andExpect(jsonPath("$.data.budgetUtilizationRate").value(75.0));
     }
@@ -94,7 +90,7 @@ class ReportControllerTest {
     @WithMockUser(roles = {"ADMIN"})
     void shouldGenerateEmployeePerformanceReport() throws Exception {
         // Given
-        int year = 2024;
+        int year = 2026;
         int month = 1;
         EmployeePerformanceReport mockReport = EmployeePerformanceReport.builder()
             .reportPeriod(LocalDate.of(year, month, 1))
@@ -108,14 +104,14 @@ class ReportControllerTest {
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.reportPeriod").value("2024-01-01"));
+                .andExpect(jsonPath("$.data.reportPeriod").value("2026-01-01"));
     }
 
     @Test
     @WithMockUser(roles = {"CAFETERIA_STAFF"})
     void shouldGenerateMealPerformanceReport() throws Exception {
         // Given
-        int year = 2024;
+        int year = 2026;
         int month = 1;
         MealPerformanceReport mockReport = MealPerformanceReport.builder()
             .reportPeriod(LocalDate.of(year, month, 1))
@@ -129,15 +125,15 @@ class ReportControllerTest {
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.reportPeriod").value("2024-01-01"));
+                .andExpect(jsonPath("$.data.reportPeriod").value("2026-01-01"));
     }
 
     @Test
     @WithMockUser(roles = {"ADMIN"})
     void shouldGenerateAuditReport() throws Exception {
         // Given
-        LocalDate startDate = LocalDate.of(2024, 1, 1);
-        LocalDate endDate = LocalDate.of(2024, 1, 31);
+        LocalDate startDate = LocalDate.of(2026, 1, 1);
+        LocalDate endDate = LocalDate.of(2026, 1, 31);
         AuditReport mockReport = AuditReport.builder()
             .startDate(startDate)
             .endDate(endDate)
@@ -152,8 +148,8 @@ class ReportControllerTest {
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.startDate").value("2024-01-01"))
-                .andExpect(jsonPath("$.data.endDate").value("2024-01-31"))
+                .andExpect(jsonPath("$.data.startDate").value("2026-01-01"))
+                .andExpect(jsonPath("$.data.endDate").value("2026-01-31"))
                 .andExpect(jsonPath("$.data.totalActions").value(100));
     }
 
@@ -161,7 +157,7 @@ class ReportControllerTest {
     @WithMockUser(roles = {"EMPLOYEE"})
     void shouldDenyAccessToEmployeePerformanceReport() throws Exception {
         // When & Then
-        mockMvc.perform(get("/api/v1/reports/employee-performance/{year}/{month}", 2024, 1)
+        mockMvc.perform(get("/api/v1/reports/employee-performance/{year}/{month}", 2026, 1)
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isForbidden());
@@ -172,7 +168,7 @@ class ReportControllerTest {
     void shouldDenyAccessToAuditReport() throws Exception {
         // When & Then
         mockMvc.perform(get("/api/v1/reports/audit/{startDate}/{endDate}", 
-                LocalDate.of(2024, 1, 1), LocalDate.of(2024, 1, 31))
+                LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 31))
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isForbidden());
@@ -181,7 +177,7 @@ class ReportControllerTest {
     @Test
     void shouldDenyAccessToUnauthenticatedUser() throws Exception {
         // When & Then
-        mockMvc.perform(get("/api/v1/reports/daily/{date}", LocalDate.of(2024, 1, 15))
+        mockMvc.perform(get("/api/v1/reports/daily/{date}", LocalDate.of(2026, 1, 15))
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isUnauthorized());
     }

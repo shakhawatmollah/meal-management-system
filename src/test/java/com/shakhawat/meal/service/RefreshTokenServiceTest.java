@@ -3,7 +3,6 @@ package com.shakhawat.meal.service;
 import com.shakhawat.meal.entity.Employee;
 import com.shakhawat.meal.entity.RefreshToken;
 import com.shakhawat.meal.exception.InvalidOperationException;
-import com.shakhawat.meal.exception.ResourceNotFoundException;
 import com.shakhawat.meal.repository.EmployeeRepository;
 import com.shakhawat.meal.repository.RefreshTokenRepository;
 import com.shakhawat.meal.security.JwtTokenProvider;

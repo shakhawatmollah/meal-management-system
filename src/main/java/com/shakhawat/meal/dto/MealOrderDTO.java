@@ -23,6 +23,7 @@ public class MealOrderDTO {
         @Future(message = "Order date must be in the future")
         private LocalDate orderDate;
 
+        @Builder.Default
         @Min(value = 1, message = "Quantity must be at least 1")
         private Integer quantity = 1;
     }

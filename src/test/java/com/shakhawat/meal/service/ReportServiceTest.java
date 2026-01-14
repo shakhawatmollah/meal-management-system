@@ -1,13 +1,9 @@
 package com.shakhawat.meal.service;
 
 import com.shakhawat.meal.dto.reports.*;
-import com.shakhawat.meal.repository.*;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,22 +20,10 @@ class ReportServiceImplTest {
     @Autowired
     private ReportService reportService;
 
-    @Autowired
-    private MealOrderRepository orderRepository;
-
-    @Autowired
-    private EmployeeRepository employeeRepository;
-
-    @Autowired
-    private MealRepository mealRepository;
-
-    @Autowired
-    private AuditLogRepository auditLogRepository;
-
     @Test
     void shouldGenerateDailyReport() {
         // Given
-        LocalDate testDate = LocalDate.of(2024, 1, 15);
+        LocalDate testDate = LocalDate.of(2026, 1, 15);
         
         // When
         DailyOperationsReport report = reportService.generateDailyReport(testDate);
@@ -56,7 +40,7 @@ class ReportServiceImplTest {
     @Test
     void shouldGenerateMonthlyReport() {
         // Given
-        int year = 2024;
+        int year = 2026;
         int month = 1;
         
         // When
@@ -74,7 +58,7 @@ class ReportServiceImplTest {
     @Test
     void shouldGenerateEmployeePerformanceReport() {
         // Given
-        int year = 2024;
+        int year = 2026;
         int month = 1;
         
         // When
@@ -92,7 +76,7 @@ class ReportServiceImplTest {
     @Test
     void shouldGenerateMealPerformanceReport() {
         // Given
-        int year = 2024;
+        int year = 2026;
         int month = 1;
         
         // When
@@ -110,8 +94,8 @@ class ReportServiceImplTest {
     @Test
     void shouldGenerateAuditReport() {
         // Given
-        LocalDate startDate = LocalDate.of(2024, 1, 1);
-        LocalDate endDate = LocalDate.of(2024, 1, 31);
+        LocalDate startDate = LocalDate.of(2026, 1, 1);
+        LocalDate endDate = LocalDate.of(2026, 1, 31);
         
         // When
         AuditReport report = reportService.generateAuditReport(startDate, endDate);

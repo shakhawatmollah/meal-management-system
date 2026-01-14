@@ -482,12 +482,4 @@ class MealOrderRepositoryTest {
         assertThat(orders.getEmployee().getEmail()).isEqualTo("query@company.com");
     }
 
-    // Helper method to get root cause
-    private Throwable getRootCause(Throwable throwable) {
-        Throwable cause = throwable;
-        while (cause.getCause() != null && cause.getCause() != cause) {
-            cause = cause.getCause();
-        }
-        return cause;
-    }
 }
