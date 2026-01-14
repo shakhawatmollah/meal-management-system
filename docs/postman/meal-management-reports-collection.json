@@ -1,0 +1,122 @@
+{
+  "info": {
+    "_postman_id": "meal-management-reports",
+    "name": "Meal Management - Reports API",
+    "description": "Collection for Meal Management System Reports APIs",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Daily Operations Report",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/reports/daily/{{date}}",
+          "host": ["{{base_url}}"],
+          "path": ["reports", "daily", "{{date}}"]
+        },
+        "description": "Generate comprehensive daily operations summary including orders, revenue, and employee activity"
+      }
+    },
+    {
+      "name": "Monthly Financial Report",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/reports/monthly/{{year}}/{{month}}",
+          "host": ["{{base_url}}"],
+          "path": ["reports", "monthly", "{{year}}", "{{month}}"]
+        },
+        "description": "Generate comprehensive monthly financial analysis including revenue, costs, and budget utilization"
+      }
+    },
+    {
+      "name": "Employee Performance Report",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/reports/employee-performance/{{year}}/{{month}}",
+          "host": ["{{base_url}}"],
+          "path": ["reports", "employee-performance", "{{year}}", "{{month}}"]
+        },
+        "description": "Generate individual and department performance metrics with budget analysis"
+      }
+    },
+    {
+      "name": "Meal Performance Report",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/reports/meal-performance/{{year}}/{{month}}",
+          "host": ["{{base_url}}"],
+          "path": ["reports", "meal-performance", "{{year}}", "{{month}}"]
+        },
+        "description": "Generate detailed meal popularity analysis and revenue breakdown"
+      }
+    },
+    {
+      "name": "Audit Report",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/reports/audit/{{startDate}}/{{endDate}}",
+          "host": ["{{base_url}}"],
+          "path": ["reports", "audit", "{{startDate}}", "{{endDate}}"]
+        },
+        "description": "Generate comprehensive audit trail and activity analysis"
+      }
+    }
+  ]
+}

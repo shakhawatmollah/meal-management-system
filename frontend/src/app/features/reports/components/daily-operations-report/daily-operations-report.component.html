@@ -1,0 +1,90 @@
+<div class="daily-operations-report">
+  <h3>Daily Operations Report - {{ data.reportDate | date:'mediumDate' }}</h3>
+  
+  <!-- Key Metrics Cards -->
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-value">{{ data.totalOrders }}</div>
+      <div class="metric-label">Total Orders</div>
+    </div>
+    
+    <div class="metric-card">
+      <div class="metric-value">{{ data.uniqueEmployees }}</div>
+      <div class="metric-label">Active Employees</div>
+    </div>
+    
+    <div class="metric-card">
+      <div class="metric-value">${{ data.dailyRevenue | number:'1.2-2' }}</div>
+      <div class="metric-label">Daily Revenue</div>
+    </div>
+    
+    <div class="metric-card">
+      <div class="metric-value">${{ data.avgOrderValue | number:'1.2-2' }}</div>
+      <div class="metric-label">Avg Order Value</div>
+    </div>
+  </div>
+  
+  <!-- Summary Stats -->
+  <div class="summary-section">
+    <h4>Summary Statistics</h4>
+    <div class="summary-grid">
+      <div class="summary-item">
+        <span class="label">Peak Hour:</span>
+        <span class="value">{{ data.peakHour }}</span>
+      </div>
+      <div class="summary-item">
+        <span class="label">Budget Utilization:</span>
+        <span class="value">{{ data.budgetUtilizationRate | number:'1.1' }}%</span>
+      </div>
+      <div class="summary-item">
+        <span class="label">Available Meals:</span>
+        <span class="value">{{ data.totalMealsAvailable }}</span>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Tables Section -->
+  <div class="tables-section">
+    <div class="row">
+      <div class="col-md-6">
+        <h4>Hourly Breakdown</h4>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Hour</th>
+              <th>Orders</th>
+              <th>Revenue</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let hour of data.hourlyBreakdown">
+              <td>{{ hour.hour }}:00</td>
+              <td>{{ hour.orderCount }}</td>
+              <td>${{ hour.revenue | number:'1.2-2' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <div class="col-md-6">
+        <h4>Meal Type Performance</h4>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Meal Type</th>
+              <th>Orders</th>
+              <th>Revenue</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let mealType of data.mealTypeBreakdown">
+              <td>{{ mealType.mealType }}</td>
+              <td>{{ mealType.orderCount }}</td>
+              <td>${{ mealType.revenue | number:'1.2-2' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

@@ -65,6 +65,11 @@ import { MatDividerModule } from '@angular/material/divider';
                 <mat-icon>people</mat-icon>
                 <span>Employees</span>
               </button>
+              
+              <button mat-button routerLink="/reports" routerLinkActive="active">
+                <mat-icon>assessment</mat-icon>
+                <span>Reports</span>
+              </button>
             </ng-container>
             
             <!-- User menu -->

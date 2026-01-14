@@ -1,0 +1,103 @@
+<div class="monthly-financial-report">
+  <h3>Monthly Financial Report - {{ data.reportPeriod | date:'mediumDate' }}</h3>
+  
+  <!-- Financial Overview Cards -->
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-value">${{ data.monthlyRevenue | number:'1.2-2' }}</div>
+      <div class="metric-label">Monthly Revenue</div>
+    </div>
+    
+    <div class="metric-card">
+      <div class="metric-value">${{ data.totalBudget | number:'1.2-2' }}</div>
+      <div class="metric-label">Total Budget</div>
+    </div>
+    
+    <div class="metric-card">
+      <div class="metric-value">${{ data.totalSpent | number:'1.2-2' }}</div>
+      <div class="metric-label">Total Spent</div>
+    </div>
+    
+    <div class="metric-card">
+      <div class="metric-value">{{ data.budgetUtilizationRate | number:'1.1' }}%</div>
+      <div class="metric-label">Budget Utilization</div>
+    </div>
+  </div>
+  
+  <!-- Budget Analysis -->
+  <div class="budget-analysis">
+    <h4>Budget Analysis</h4>
+    <div class="budget-metrics">
+      <div class="budget-metric">
+        <span class="label">Budget Variance:</span>
+        <span class="value">${{ data.budgetVariance | number:'1.2-2' }}</span>
+      </div>
+      <div class="budget-metric">
+        <span class="label">Utilization Rate:</span>
+        <span class="value">{{ data.budgetUtilizationRate | number:'1.1' }}%</span>
+      </div>
+      <div class="budget-metric">
+        <span class="label">Budget Status:</span>
+        <span class="value">{{ getBudgetStatus() }}</span>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Department Breakdown -->
+  <div class="department-section">
+    <h4>Department Performance</h4>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Department</th>
+          <th>Orders</th>
+          <th>Revenue</th>
+          <th>Employees</th>
+          <th>% of Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let dept of data.departmentBreakdown">
+          <td>{{ dept.department }}</td>
+          <td>{{ dept.orderCount }}</td>
+          <td>${{ dept.revenue | number:'1.2-2' }}</td>
+          <td>{{ dept.uniqueEmployees }}</td>
+          <td>{{ dept.percentageOfTotal | number:'1.1' }}%</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  
+  <!-- Employee Budget Analysis -->
+  <div class="employee-section">
+    <h4>Employee Budget Analysis</h4>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Employee</th>
+          <th>Department</th>
+          <th>Budget</th>
+          <th>Spent</th>
+          <th>Remaining</th>
+          <th>Utilization</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let emp of data.employeeBudgetAnalysis">
+          <td>{{ emp.employeeName }}</td>
+          <td>{{ emp.department }}</td>
+          <td>${{ emp.monthlyBudget | number:'1.2-2' }}</td>
+          <td>${{ emp.currentSpent | number:'1.2-2' }}</td>
+          <td>${{ emp.remainingBudget | number:'1.2-2' }}</td>
+          <td>{{ emp.utilizationPercentage | number:'1.1' }}%</td>
+          <td>
+            <span class="status-badge" [ngClass]="getStatusClass(emp.status)">
+              {{ emp.status.replace('_', ' ') }}
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

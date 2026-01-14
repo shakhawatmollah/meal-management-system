@@ -26,6 +26,9 @@ import { EmployeeFormComponent } from './features/employees/index';
 // Profile Component
 import { ProfileComponent } from './features/profile/index';
 
+// Reports Components
+import { ReportsDashboardComponent } from './features/reports/components/reports-dashboard/reports-dashboard.component';
+
 export const routes: Routes = [
   { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
@@ -94,6 +97,12 @@ export const routes: Routes = [
     path: 'profile',
     component: ProfileComponent,
     canActivate: [AuthGuard]
+  },
+  
+  {
+    path: 'reports',
+    component: ReportsDashboardComponent,
+    canActivate: [AuthGuard, AdminGuard]
   },
   
   { path: '**', redirectTo: '/dashboard' }
