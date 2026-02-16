@@ -15,6 +15,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
 import java.util.List;
 
@@ -56,6 +57,13 @@ public class MealService {
         log.debug("Fetching all meals with pagination: {}", pageable);
 
         return mealRepository.findAll(pageable)
+                .map(entityMapper::toDto);
+    }
+
+    public Page<MealDTO.Response> getMealsWithFilters(
+            Boolean available, MealType type, String search, Pageable pageable) {
+        String normalizedSearch = StringUtils.hasText(search) ? search.trim() : null;
+        return mealRepository.findWithFilters(available, type, normalizedSearch, pageable)
                 .map(entityMapper::toDto);
     }
 

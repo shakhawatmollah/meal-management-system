@@ -2,6 +2,14 @@ export interface ApiResponse<T> {
   success: boolean;
   message: string;
   data: T;
+  pagination?: PageMetadata;
+}
+
+export interface PageMetadata {
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
 }
 
 export interface PageResponse<T> {
@@ -103,14 +111,30 @@ export interface MealRequest {
 // Order Interfaces
 export interface MealOrder {
   id: number;
-  employee: Employee;
-  meal: Meal;
+  employeeId: number;
+  employeeName: string;
+  mealId: number;
+  mealName: string;
   orderDate: string;
   quantity: number;
   totalPrice: number;
   status: 'PENDING' | 'CONFIRMED' | 'PREPARED' | 'DELIVERED' | 'CANCELLED';
-  createdAt: string;
-  updatedAt: string;
+}
+
+export interface DashboardRecentOrder {
+  id: number;
+  employee: {
+    id: number;
+    name: string;
+  };
+  meal: {
+    id: number;
+    name: string;
+  };
+  orderDate: string;
+  quantity: number;
+  totalPrice: number;
+  status: 'PENDING' | 'CONFIRMED' | 'PREPARED' | 'DELIVERED' | 'CANCELLED';
 }
 
 export interface MealOrderRequest {
@@ -128,7 +152,7 @@ export interface DashboardStats {
   todayOrders: number;
   monthlyRevenue: number;
   topMeals: MealStats[];
-  recentOrders: MealOrder[];
+  recentOrders: DashboardRecentOrder[];
 }
 
 export interface MealStats {

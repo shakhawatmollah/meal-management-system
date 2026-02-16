@@ -1,6 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { ReportService, DailyOperationsReport, MonthlyFinancialReport } from '../../../../core/services/report.service';
+import { ReportService } from '../../../../core/services/report.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Subject, takeUntil } from 'rxjs';
 
@@ -237,7 +236,6 @@ export class ReportsDashboardComponent implements OnInit, OnDestroy {
   
   constructor(
     private reportService: ReportService,
-    private fb: FormBuilder,
     private snackBar: MatSnackBar
   ) {}
   
@@ -312,8 +310,8 @@ export class ReportsDashboardComponent implements OnInit, OnDestroy {
     this.reportService.getDailyReport(dateStr)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (report) => {
-          this.generatedReport = report;
+        next: (response) => {
+          this.generatedReport = response.data;
           this.loading = false;
           this.snackBar.open('Daily report generated successfully', 'Close', { duration: 3000 });
         },
@@ -332,8 +330,8 @@ export class ReportsDashboardComponent implements OnInit, OnDestroy {
     this.reportService.getMonthlyReport(year, month)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (report) => {
-          this.generatedReport = report;
+        next: (response) => {
+          this.generatedReport = response.data;
           this.loading = false;
           this.snackBar.open('Monthly report generated successfully', 'Close', { duration: 3000 });
         },
@@ -352,8 +350,8 @@ export class ReportsDashboardComponent implements OnInit, OnDestroy {
     this.reportService.getEmployeePerformanceReport(year, month)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (report) => {
-          this.generatedReport = report;
+        next: (response) => {
+          this.generatedReport = response.data;
           this.loading = false;
           this.snackBar.open('Employee performance report generated successfully', 'Close', { duration: 3000 });
         },
@@ -372,8 +370,8 @@ export class ReportsDashboardComponent implements OnInit, OnDestroy {
     this.reportService.getMealPerformanceReport(year, month)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (report) => {
-          this.generatedReport = report;
+        next: (response) => {
+          this.generatedReport = response.data;
           this.loading = false;
           this.snackBar.open('Meal performance report generated successfully', 'Close', { duration: 3000 });
         },
@@ -392,8 +390,8 @@ export class ReportsDashboardComponent implements OnInit, OnDestroy {
     this.reportService.getAuditReport(startDateStr, endDateStr)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (report) => {
-          this.generatedReport = report;
+        next: (response) => {
+          this.generatedReport = response.data;
           this.loading = false;
           this.snackBar.open('Audit report generated successfully', 'Close', { duration: 3000 });
         },
@@ -409,29 +407,26 @@ export class ReportsDashboardComponent implements OnInit, OnDestroy {
     if (!this.generatedReport || !this.selectedReportType) {
       return;
     }
-    
-    const params = this.getExportParams();
-    
-    this.reportService.exportReport(this.selectedReportType, params)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (blob) => {
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `${this.getReportTitle()}.pdf`;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          window.URL.revokeObjectURL(url);
-          
-          this.snackBar.open('Report exported successfully', 'Close', { duration: 3000 });
-        },
-        error: (error) => {
-          this.snackBar.open('Failed to export report', 'Close', { duration: 3000 });
-          console.error('Error exporting report:', error);
-        }
-      });
+
+    const payload = {
+      reportType: this.selectedReportType,
+      generatedAt: new Date().toISOString(),
+      params: this.getExportParams(),
+      data: this.generatedReport
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: 'application/json'
+    });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${this.selectedReportType}-report-${this.formatDate(new Date())}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+
+    this.snackBar.open('Report exported as JSON', 'Close', { duration: 3000 });
   }
   
   resetForm() {

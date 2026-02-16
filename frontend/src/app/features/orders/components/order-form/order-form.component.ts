@@ -9,6 +9,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { MealService } from '../../../../core/services/api/meal-api.service';
+import { OrderService } from '../../../../core/services/api/order-api.service';
+import { AuthService } from '../../../../core/services/auth.service';
+import { Meal, MealOrderRequest } from '../../../../core/models/api.models';
 
 @Component({
   selector: 'app-order-form',
@@ -32,14 +36,6 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
         <mat-card-content>
           <form [formGroup]="orderForm" (ngSubmit)="onSubmit()">
             <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Customer Name</mat-label>
-              <input matInput formControlName="customerName" placeholder="Enter customer name">
-              <mat-error *ngIf="orderForm.get('customerName')?.hasError('required')">
-                Customer name is required
-              </mat-error>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline" class="full-width">
               <mat-label>Meal</mat-label>
               <mat-select formControlName="mealId">
                 <mat-option value="">Select a meal</mat-option>
@@ -53,6 +49,14 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Order Date</mat-label>
+              <input matInput type="date" formControlName="orderDate" [min]="minOrderDate">
+              <mat-error *ngIf="orderForm.get('orderDate')?.hasError('required')">
+                Order date is required
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full-width">
               <mat-label>Quantity</mat-label>
               <input matInput type="number" formControlName="quantity" placeholder="Enter quantity" min="1">
               <mat-error *ngIf="orderForm.get('quantity')?.hasError('required')">
@@ -61,13 +65,6 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
               <mat-error *ngIf="orderForm.get('quantity')?.hasError('min')">
                 Quantity must be at least 1
               </mat-error>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Special Instructions</mat-label>
-              <textarea matInput formControlName="specialInstructions" 
-                        placeholder="Any special requests or instructions"
-                        rows="3"></textarea>
             </mat-form-field>
 
             <div class="form-actions">
@@ -110,18 +107,25 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 export class OrderFormComponent {
   orderForm: FormGroup;
   isEdit = false;
-  availableMeals: any[] = [];
+  availableMeals: Meal[] = [];
+  minOrderDate: string;
 
   constructor(
     private fb: FormBuilder,
+    private mealService: MealService,
+    private orderService: OrderService,
+    private authService: AuthService,
     private router: Router,
     private snackBar: MatSnackBar
   ) {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    this.minOrderDate = tomorrow.toISOString().split('T')[0];
+
     this.orderForm = this.fb.group({
-      customerName: ['', Validators.required],
       mealId: ['', Validators.required],
-      quantity: [1, [Validators.required, Validators.min(1)]],
-      specialInstructions: ['']
+      orderDate: [this.minOrderDate, Validators.required],
+      quantity: [1, [Validators.required, Validators.min(1)]]
     });
   }
 
@@ -130,36 +134,64 @@ export class OrderFormComponent {
   }
 
   loadAvailableMeals(): void {
-    // TODO: Implement meal service call
-    this.availableMeals = [
-      { id: 1, name: 'Pizza', price: 10.00 },
-      { id: 2, name: 'Burger', price: 12.00 },
-      { id: 3, name: 'Salad', price: 8.00 }
-    ];
-  }
-
-  onSubmit(): void {
-    if (this.orderForm.valid) {
-      const orderData = this.orderForm.value;
-      
-      // TODO: Implement order service call
-      console.log('Order data:', orderData);
-      
-      this.snackBar.open(
-        this.isEdit ? 'Order updated successfully' : 'Order created successfully',
-        'Close',
-        {
+    this.mealService.getAvailableMeals().subscribe({
+      next: (response) => {
+        this.availableMeals = response.data ?? [];
+      },
+      error: () => {
+        this.snackBar.open('Failed to load available meals', 'Close', {
           duration: 3000,
           horizontalPosition: 'end',
           verticalPosition: 'top'
-        }
-      );
-      
-      this.router.navigate(['/orders']);
+        });
+      }
+    });
+  }
+
+  onSubmit(): void {
+    if (!this.orderForm.valid) {
+      return;
     }
+
+    const currentUser = this.authService.getCurrentUser();
+    if (!currentUser?.id) {
+      this.snackBar.open('Please sign in again to place an order', 'Close', {
+        duration: 4000,
+        horizontalPosition: 'end',
+        verticalPosition: 'top'
+      });
+      return;
+    }
+
+    const formValue = this.orderForm.value;
+    const orderData: MealOrderRequest = {
+      employeeId: currentUser.id,
+      mealId: Number(formValue.mealId),
+      orderDate: formValue.orderDate,
+      quantity: Number(formValue.quantity)
+    };
+
+    this.orderService.createOrder(orderData).subscribe({
+      next: () => {
+        this.snackBar.open('Order created successfully', 'Close', {
+          duration: 3000,
+          horizontalPosition: 'end',
+          verticalPosition: 'top'
+        });
+
+        this.router.navigate(['/my-orders']);
+      },
+      error: () => {
+        this.snackBar.open('Failed to create order', 'Close', {
+          duration: 3000,
+          horizontalPosition: 'end',
+          verticalPosition: 'top'
+        });
+      }
+    });
   }
 
   cancel(): void {
-    this.router.navigate(['/orders']);
+    this.router.navigate(['/my-orders']);
   }
 }

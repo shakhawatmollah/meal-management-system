@@ -262,8 +262,8 @@ export class MealListComponent {
     this.isLoading = true;
     this.mealService.getMeals(params).subscribe({
       next: (response) => {
-        this.meals = response.data.content;
-        this.totalElements = response.data.totalElements;
+        this.meals = response.data ?? [];
+        this.totalElements = response.pagination?.totalElements ?? this.meals.length;
         this.isLoading = false;
       },
       error: (error) => {

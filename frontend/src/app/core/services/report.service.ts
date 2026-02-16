@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { ApiResponse } from '../models/api.models';
 
 export interface DailyOperationsReport {
   reportDate: string;
@@ -185,41 +186,33 @@ export class ReportService {
   
   constructor(private http: HttpClient) {}
   
-  getDailyReport(date: string): Observable<DailyOperationsReport> {
-    return this.http.get<DailyOperationsReport>(
+  getDailyReport(date: string): Observable<ApiResponse<DailyOperationsReport>> {
+    return this.http.get<ApiResponse<DailyOperationsReport>>(
       `${environment.apiUrl}/reports/daily/${date}`
     );
   }
   
-  getMonthlyReport(year: number, month: number): Observable<MonthlyFinancialReport> {
-    return this.http.get<MonthlyFinancialReport>(
+  getMonthlyReport(year: number, month: number): Observable<ApiResponse<MonthlyFinancialReport>> {
+    return this.http.get<ApiResponse<MonthlyFinancialReport>>(
       `${environment.apiUrl}/reports/monthly/${year}/${month}`
     );
   }
   
-  getEmployeePerformanceReport(year: number, month: number): Observable<EmployeePerformanceReport> {
-    return this.http.get<EmployeePerformanceReport>(
+  getEmployeePerformanceReport(year: number, month: number): Observable<ApiResponse<EmployeePerformanceReport>> {
+    return this.http.get<ApiResponse<EmployeePerformanceReport>>(
       `${environment.apiUrl}/reports/employee-performance/${year}/${month}`
     );
   }
   
-  getMealPerformanceReport(year: number, month: number): Observable<MealPerformanceReport> {
-    return this.http.get<MealPerformanceReport>(
+  getMealPerformanceReport(year: number, month: number): Observable<ApiResponse<MealPerformanceReport>> {
+    return this.http.get<ApiResponse<MealPerformanceReport>>(
       `${environment.apiUrl}/reports/meal-performance/${year}/${month}`
     );
   }
   
-  getAuditReport(startDate: string, endDate: string): Observable<AuditReport> {
-    return this.http.get<AuditReport>(
+  getAuditReport(startDate: string, endDate: string): Observable<ApiResponse<AuditReport>> {
+    return this.http.get<ApiResponse<AuditReport>>(
       `${environment.apiUrl}/reports/audit/${startDate}/${endDate}`
-    );
-  }
-  
-  exportReport(reportType: string, params: any): Observable<Blob> {
-    return this.http.post(
-      `${environment.apiUrl}/reports/export/${reportType}`,
-      params,
-      { responseType: 'blob' }
     );
   }
 }

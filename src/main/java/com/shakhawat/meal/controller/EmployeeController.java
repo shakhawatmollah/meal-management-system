@@ -1,6 +1,7 @@
 package com.shakhawat.meal.controller;
 
 import com.shakhawat.meal.dto.EmployeeDTO;
+import com.shakhawat.meal.entity.EmployeeStatus;
 import com.shakhawat.meal.service.EmployeeService;
 import com.shakhawat.meal.util.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -15,6 +16,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -54,13 +56,21 @@ public class EmployeeController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "DESC") String direction) {
+            @RequestParam(defaultValue = "DESC") String direction,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String department,
+            @RequestParam(required = false) EmployeeStatus status) {
 
         Sort.Direction sortDirection = direction.equalsIgnoreCase("ASC")
                 ? Sort.Direction.ASC : Sort.Direction.DESC;
         Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
 
-        Page<EmployeeDTO.Response> responses = employeeService.getAllEmployees(pageable);
+        Page<EmployeeDTO.Response> responses;
+        if (!StringUtils.hasText(search) && !StringUtils.hasText(department) && status == null) {
+            responses = employeeService.getAllEmployees(pageable);
+        } else {
+            responses = employeeService.getAllEmployees(pageable, search, department, status);
+        }
         return ResponseEntity.ok(ApiResponse.success(responses));
     }
 

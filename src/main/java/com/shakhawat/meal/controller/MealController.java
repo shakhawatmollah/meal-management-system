@@ -51,6 +51,7 @@ public class MealController {
     public ResponseEntity<?> getAllMeals(
             @RequestParam(required = false) Boolean available,
             @RequestParam(required = false) MealType type,
+            @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "id") String sortBy,
@@ -60,17 +61,12 @@ public class MealController {
                 ? Sort.Direction.ASC : Sort.Direction.DESC;
         Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
 
-        if (Boolean.TRUE.equals(available) && page == 0 && size == 20) {
+        if (Boolean.TRUE.equals(available) && type == null && search == null && page == 0 && size == 20) {
             List<MealDTO.Response> responses = mealService.getAvailableMeals();
             return ResponseEntity.ok(ApiResponse.success(responses));
-        } else if (Boolean.TRUE.equals(available)) {
-            Page<MealDTO.Response> responses = mealService.getAvailableMeals(pageable);
-            return ResponseEntity.ok(ApiResponse.success(responses));
-        } else if (type != null) {
-            Page<MealDTO.Response> responses = mealService.getMealsByType(type, pageable);
-            return ResponseEntity.ok(ApiResponse.success(responses));
         } else {
-            Page<MealDTO.Response> responses = mealService.getAllMeals(pageable);
+            Page<MealDTO.Response> responses = mealService.getMealsWithFilters(
+                    available, type, search, pageable);
             return ResponseEntity.ok(ApiResponse.success(responses));
         }
     }

@@ -4,7 +4,6 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import {
   ApiResponse,
-  PageResponse,
   Employee,
   EmployeeRequest,
   SearchParams
@@ -18,9 +17,9 @@ export class EmployeeService {
 
   constructor(private http: HttpClient) {}
 
-  getEmployees(params?: SearchParams): Observable<ApiResponse<PageResponse<Employee>>> {
+  getEmployees(params?: SearchParams): Observable<ApiResponse<Employee[]>> {
     const queryParams = this.buildQueryParams(params);
-    return this.http.get<ApiResponse<PageResponse<Employee>>>(`${this.API_URL}${queryParams}`);
+    return this.http.get<ApiResponse<Employee[]>>(`${this.API_URL}${queryParams}`);
   }
 
   getEmployee(id: number): Observable<ApiResponse<Employee>> {
@@ -46,7 +45,8 @@ export class EmployeeService {
     
     if (params.page !== undefined) query.set('page', params.page.toString());
     if (params.size !== undefined) query.set('size', params.size.toString());
-    if (params.sort) query.set('sort', `${params.sort},${params.direction || 'ASC'}`);
+    if (params.sort) query.set('sortBy', params.sort);
+    if (params.direction) query.set('direction', params.direction);
     if (params.search) query.set('search', params.search);
     if (params.department) query.set('department', params.department);
     if (params.status) query.set('status', params.status);

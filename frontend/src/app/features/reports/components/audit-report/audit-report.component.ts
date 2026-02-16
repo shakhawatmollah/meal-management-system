@@ -1,6 +1,7 @@
 import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
+import { AuditReport } from '../../../../core/services/report.service';
 
 @Component({
   selector: 'app-audit-report',
@@ -20,11 +21,11 @@ import { MatCardModule } from '@angular/material/card';
               <div class="metric-label">Total Actions</div>
             </div>
             <div class="metric">
-              <div class="metric-value">{{ data.uniqueUsers }}</div>
+              <div class="metric-value">{{ getUniqueUsers() }}</div>
               <div class="metric-label">Unique Users</div>
             </div>
             <div class="metric">
-              <div class="metric-value">{{ data.failedLogins }}</div>
+              <div class="metric-value">{{ getFailedLogins() }}</div>
               <div class="metric-label">Failed Logins</div>
             </div>
           </div>
@@ -34,19 +35,22 @@ import { MatCardModule } from '@angular/material/card';
       <!-- Recent Activities -->
       <mat-card>
         <mat-card-header>
-          <mat-card-title>Recent Activities</mat-card-title>
+          <mat-card-title>Suspicious Activities</mat-card-title>
         </mat-card-header>
         <mat-card-content>
           <div class="activity-list">
-            <div class="activity-item" *ngFor="let activity of data.recentActivities">
+            <div class="activity-item" *ngFor="let activity of data.suspiciousActivity">
               <div class="activity-header">
                 <span class="action">{{ activity.action }}</span>
                 <span class="timestamp">{{ activity.timestamp | date:'short' }}</span>
               </div>
               <div class="activity-details">
-                <span class="user">User: {{ activity.user }}</span>
+                <span class="user">User: {{ activity.userId }}</span>
                 <span class="ip">IP: {{ activity.ipAddress }}</span>
               </div>
+            </div>
+            <div class="activity-item" *ngIf="!data.suspiciousActivity?.length">
+              <span>No suspicious activities in selected range.</span>
             </div>
           </div>
         </mat-card-content>
@@ -126,11 +130,19 @@ import { MatCardModule } from '@angular/material/card';
 })
 export class AuditReportComponent implements OnChanges {
   
-  @Input() data: any;
+  @Input() data!: AuditReport;
   
   ngOnChanges(changes: SimpleChanges) {
     if (changes['data'] && this.data) {
       console.log('Audit report data loaded:', this.data);
     }
+  }
+
+  getUniqueUsers(): number {
+    return this.data?.userActivity?.length || 0;
+  }
+
+  getFailedLogins(): number {
+    return this.data?.actionBreakdown?.find(a => a.action?.toUpperCase().includes('LOGIN_FAILED'))?.actionCount || 0;
   }
 }

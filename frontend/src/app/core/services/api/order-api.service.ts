@@ -4,7 +4,6 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import {
   ApiResponse,
-  PageResponse,
   MealOrder,
   MealOrderRequest,
   SearchParams
@@ -18,9 +17,9 @@ export class OrderService {
 
   constructor(private http: HttpClient) {}
 
-  getOrders(params?: SearchParams): Observable<ApiResponse<PageResponse<MealOrder>>> {
+  getOrders(params?: SearchParams): Observable<ApiResponse<MealOrder[]>> {
     const queryParams = this.buildQueryParams(params);
-    return this.http.get<ApiResponse<PageResponse<MealOrder>>>(`${this.API_URL}${queryParams}`);
+    return this.http.get<ApiResponse<MealOrder[]>>(`${this.API_URL}${queryParams}`);
   }
 
   getOrder(id: number): Observable<ApiResponse<MealOrder>> {
@@ -40,8 +39,13 @@ export class OrderService {
   }
 
   getMyOrders(employeeId: number, params?: SearchParams): Observable<ApiResponse<MealOrder[]>> {
-    const queryParams = this.buildQueryParams(params);
-    return this.http.get<ApiResponse<MealOrder[]>>(`${this.API_URL}?employeeId=${employeeId}${queryParams}`);
+    const query = new URLSearchParams();
+    query.set('employeeId', employeeId.toString());
+    if (params?.page !== undefined) query.set('page', params.page.toString());
+    if (params?.size !== undefined) query.set('size', params.size.toString());
+    if (params?.sort) query.set('sortBy', params.sort);
+    if (params?.direction) query.set('direction', params.direction);
+    return this.http.get<ApiResponse<MealOrder[]>>(`${this.API_URL}?${query.toString()}`);
   }
 
   getOrdersByDate(date: string): Observable<ApiResponse<MealOrder[]>> {
@@ -55,13 +59,11 @@ export class OrderService {
     
     if (params.page !== undefined) query.set('page', params.page.toString());
     if (params.size !== undefined) query.set('size', params.size.toString());
-    if (params.sort) query.set('sort', `${params.sort},${params.direction || 'ASC'}`);
-    if (params.search) query.set('search', params.search);
-    if (params.status) query.set('status', params.status);
-    if (params.dateFrom) query.set('dateFrom', params.dateFrom);
-    if (params.dateTo) query.set('dateTo', params.dateTo);
+    if (params.sort) query.set('sortBy', params.sort);
+    if (params.direction) query.set('direction', params.direction);
+    if (params.dateFrom) query.set('date', params.dateFrom);
     
     const queryString = query.toString();
-    return queryString ? `&${queryString}` : '';
+    return queryString ? `?${queryString}` : '';
   }
 }

@@ -127,4 +127,21 @@ public interface MealOrderRepository extends JpaRepository<MealOrder, Long> {
     List<Object[]> findEmployeeBudgetAnalysisByMonth(
             @Param("year") Integer year,
             @Param("month") Integer month);
+
+    @Query("SELECT m.id, m.name, COUNT(mo.id), SUM(mo.totalPrice) " +
+           "FROM MealOrder mo " +
+           "JOIN mo.meal m " +
+           "WHERE mo.orderDate BETWEEN :startDate AND :endDate " +
+           "GROUP BY m.id, m.name " +
+           "ORDER BY COUNT(mo.id) DESC")
+    List<Object[]> findTopMealsByDateRange(
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate,
+            Pageable pageable);
+
+    @Query("SELECT mo FROM MealOrder mo " +
+           "JOIN FETCH mo.employee " +
+           "JOIN FETCH mo.meal " +
+           "ORDER BY mo.createdAt DESC")
+    List<MealOrder> findRecentOrdersWithDetails(Pageable pageable);
 }

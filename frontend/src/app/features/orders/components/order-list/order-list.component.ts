@@ -8,6 +8,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { Router } from '@angular/router';
+import { OrderService } from '../../../../core/services/api/order-api.service';
+import { MealOrder, SearchParams } from '../../../../core/models/api.models';
 
 @Component({
   selector: 'app-order-list',
@@ -47,7 +50,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 
               <ng-container matColumnDef="customer">
                 <th mat-header-cell *matHeaderCellDef mat-sort-header>Customer</th>
-                <td mat-cell *matCellDef="let row">{{ row.customerName }}</td>
+                <td mat-cell *matCellDef="let row">{{ row.employeeName }}</td>
               </ng-container>
 
               <ng-container matColumnDef="meal">
@@ -81,11 +84,15 @@ import { MatSnackBar } from '@angular/material/snack-bar';
                   </button>
                 </td>
               </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
             </table>
 
             <mat-paginator [length]="totalElements" 
                           [pageSize]="pageSize" 
-                          [pageSizeOptions]="[10, 25, 50, 100]">
+                          [pageSizeOptions]="[10, 25, 50, 100]"
+                          (page)="pageEvent($event)">
             </mat-paginator>
           </div>
         </mat-card-content>
@@ -125,7 +132,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
   `]
 })
 export class OrderListComponent {
-  orders: any[] = [];
+  orders: MealOrder[] = [];
   totalElements = 0;
   pageSize = 10;
   isLoading = false;
@@ -133,6 +140,8 @@ export class OrderListComponent {
   displayedColumns: string[] = ['id', 'customer', 'meal', 'quantity', 'totalPrice', 'status', 'actions'];
 
   constructor(
+    private orderService: OrderService,
+    private router: Router,
     private snackBar: MatSnackBar
   ) {}
 
@@ -140,38 +149,62 @@ export class OrderListComponent {
     this.loadOrders();
   }
 
-  loadOrders(): void {
+  loadOrders(params?: SearchParams): void {
     this.isLoading = true;
-    // TODO: Implement order service call
-    setTimeout(() => {
-      this.orders = [
-        { id: 1, customerName: 'John Doe', mealName: 'Pizza', quantity: 2, totalPrice: 20.00, status: 'PENDING' },
-        { id: 2, customerName: 'Jane Smith', mealName: 'Burger', quantity: 1, totalPrice: 12.00, status: 'COMPLETED' }
-      ];
-      this.totalElements = 2;
-      this.isLoading = false;
-    }, 1000);
+    this.orderService.getOrders(params).subscribe({
+      next: (response) => {
+        this.orders = response.data ?? [];
+        this.totalElements = response.pagination?.totalElements ?? this.orders.length;
+        this.isLoading = false;
+      },
+      error: () => {
+        this.isLoading = false;
+        this.snackBar.open('Failed to load orders', 'Close', {
+          duration: 3000,
+          horizontalPosition: 'end',
+          verticalPosition: 'top'
+        });
+      }
+    });
   }
 
   createOrder(): void {
-    // TODO: Navigate to order form
-    console.log('Create new order');
+    this.router.navigate(['/orders/new']);
   }
 
   viewOrder(id: number): void {
-    // TODO: Navigate to order details
-    console.log('View order:', id);
+    this.snackBar.open(`Order #${id} selected`, 'Close', { duration: 2000 });
   }
 
   deleteOrder(id: number): void {
-    if (confirm('Are you sure you want to delete this order?')) {
-      // TODO: Implement delete order
-      this.snackBar.open('Order deleted successfully', 'Close', {
-        duration: 3000,
-        horizontalPosition: 'end',
-        verticalPosition: 'top'
+    if (confirm('Are you sure you want to cancel this order?')) {
+      this.orderService.cancelOrder(id).subscribe({
+        next: () => {
+          this.snackBar.open('Order cancelled successfully', 'Close', {
+            duration: 3000,
+            horizontalPosition: 'end',
+            verticalPosition: 'top'
+          });
+          this.loadOrders();
+        },
+        error: () => {
+          this.snackBar.open('Failed to cancel order', 'Close', {
+            duration: 3000,
+            horizontalPosition: 'end',
+            verticalPosition: 'top'
+          });
+        }
       });
-      this.loadOrders();
     }
+  }
+
+  pageEvent(event: any): void {
+    const params: SearchParams = {
+      page: event.pageIndex,
+      size: event.pageSize,
+      sort: 'createdAt',
+      direction: 'DESC'
+    };
+    this.loadOrders(params);
   }
 }

@@ -26,6 +26,17 @@ describe('AuthService', () => {
     roles: ['ROLE_EMPLOYEE']
   };
 
+  const createMockJwt = (
+    payload: Record<string, any> = { sub: 'test@example.com', roles: 'ROLE_EMPLOYEE' }
+  ): string => {
+    const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+    const body = btoa(JSON.stringify({
+      exp: Math.floor(Date.now() / 1000) + 3600,
+      ...payload
+    }));
+    return `${header}.${body}.signature`;
+  };
+
   beforeEach(() => {
     const spy = jasmine.createSpyObj('Router', ['navigate']);
 
@@ -138,16 +149,20 @@ describe('AuthService', () => {
 
   it('should initialize auth state with valid tokens', () => {
     // Set up valid tokens in localStorage
+    const accessToken = createMockJwt({ sub: 'admin@example.com', roles: 'ROLE_ADMIN,ROLE_EMPLOYEE' });
     localStorage.setItem('auth_tokens', JSON.stringify({
-      accessToken: 'valid-token',
+      accessToken,
       refreshToken: 'refresh-token'
     }));
 
-    // Create service instance to trigger initialization
-    service = TestBed.inject(AuthService);
+    // Trigger initialization against updated localStorage tokens
+    (service as any).initializeAuth();
 
     service.isAuthenticated$.subscribe(isAuth => {
       expect(isAuth).toBe(true);
     });
+
+    expect(service.isAdmin()).toBe(true);
+    expect(service.isEmployee()).toBe(true);
   });
 });

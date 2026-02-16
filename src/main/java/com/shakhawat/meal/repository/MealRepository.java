@@ -34,5 +34,11 @@ public interface MealRepository extends JpaRepository<Meal, Long> {
 
     @Query("SELECT m.type, COUNT(m.id) FROM Meal m WHERE m.available = true GROUP BY m.type")
     List<Object[]> findAvailableMealsByTypeStats();
+
+    @Query("SELECT m FROM Meal m " +
+           "WHERE (:available IS NULL OR m.available = :available) " +
+           "AND (:type IS NULL OR m.type = :type) " +
+           "AND (:search IS NULL OR LOWER(m.name) LIKE LOWER(CONCAT('%', :search, '%')))")
+    Page<Meal> findWithFilters(Boolean available, MealType type, String search, Pageable pageable);
 }
 

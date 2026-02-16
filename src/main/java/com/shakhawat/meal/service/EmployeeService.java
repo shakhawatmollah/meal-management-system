@@ -2,6 +2,7 @@ package com.shakhawat.meal.service;
 
 import com.shakhawat.meal.dto.EmployeeDTO;
 import com.shakhawat.meal.entity.Employee;
+import com.shakhawat.meal.entity.EmployeeStatus;
 import com.shakhawat.meal.exception.*;
 import com.shakhawat.meal.repository.EmployeeRepository;
 import com.shakhawat.meal.util.EntityMapper;
@@ -12,8 +13,10 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
 
 @Service
@@ -58,6 +61,38 @@ public class EmployeeService {
         log.debug("Fetching all employees with pagination: {}", pageable);
 
         return employeeRepository.findAll(pageable)
+                .map(entityMapper::toDto);
+    }
+
+    public Page<EmployeeDTO.Response> getAllEmployees(
+            Pageable pageable,
+            String search,
+            String department,
+            EmployeeStatus status) {
+        log.debug("Fetching employees with filters - search: {}, department: {}, status: {}", search, department, status);
+
+        Specification<Employee> specification = (root, query, cb) -> cb.conjunction();
+
+        if (StringUtils.hasText(search)) {
+            String searchLower = search.trim().toLowerCase();
+            specification = specification.and((root, query, cb) -> cb.or(
+                    cb.like(cb.lower(root.get("name")), "%" + searchLower + "%"),
+                    cb.like(cb.lower(root.get("email")), "%" + searchLower + "%")
+            ));
+        }
+
+        if (StringUtils.hasText(department)) {
+            String departmentValue = department.trim().toLowerCase();
+            specification = specification.and((root, query, cb) ->
+                    cb.equal(cb.lower(root.get("department")), departmentValue));
+        }
+
+        if (status != null) {
+            specification = specification.and((root, query, cb) ->
+                    cb.equal(root.get("status"), status));
+        }
+
+        return employeeRepository.findAll(specification, pageable)
                 .map(entityMapper::toDto);
     }
 

@@ -10,7 +10,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { Observable } from 'rxjs';
 import { DashboardService } from '../../../../core/services/api/dashboard-api.service';
-import { DashboardStats, MealStats, MealOrder } from '../../../../core/models/api.models';
+import { DashboardStats } from '../../../../core/models/api.models';
 import { CurrencyPipe } from '@angular/common';
 
 @Component({

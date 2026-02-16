@@ -259,8 +259,8 @@ export class EmployeeListComponent {
     this.isLoading = true;
     this.employeeService.getEmployees(params).subscribe({
       next: (response) => {
-        this.employees = response.data.content;
-        this.totalElements = response.data.totalElements;
+        this.employees = response.data ?? [];
+        this.totalElements = response.pagination?.totalElements ?? this.employees.length;
         this.isLoading = false;
       },
       error: (error) => {

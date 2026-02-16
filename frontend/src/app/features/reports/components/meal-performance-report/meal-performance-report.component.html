@@ -9,10 +9,10 @@
     <mat-card-content>
       <div class="meal-grid">
         <div class="meal-item" *ngFor="let meal of data.topMeals">
-          <div class="meal-name">{{ meal.name }}</div>
+          <div class="meal-name">{{ meal.mealName }}</div>
           <div class="meal-stats">
-            <span class="orders">{{ meal.totalOrders }} orders</span>
-            <span class="revenue">${{ meal.revenue | number }}</span>
+            <span class="orders">{{ meal.timesOrdered }} orders</span>
+            <span class="revenue">${{ meal.totalRevenue | number }}</span>
           </div>
         </div>
       </div>
@@ -27,15 +27,15 @@
     <mat-card-content>
       <div class="metrics-grid">
         <div class="metric">
-          <div class="metric-value">{{ data.totalMealOrders }}</div>
+          <div class="metric-value">{{ getTotalMealOrders() }}</div>
           <div class="metric-label">Total Meal Orders</div>
         </div>
         <div class="metric">
-          <div class="metric-value">${{ data.totalRevenue | number }}</div>
+          <div class="metric-value">${{ getTotalRevenue() | number }}</div>
           <div class="metric-label">Total Revenue</div>
         </div>
         <div class="metric">
-          <div class="metric-value">${{ data.averageOrderValue | number }}</div>
+          <div class="metric-value">${{ getAverageOrderValue() | number }}</div>
           <div class="metric-label">Average Order Value</div>
         </div>
       </div>

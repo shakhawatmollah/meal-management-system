@@ -14,6 +14,12 @@ import {
   LogoutRequest
 } from '../models/api.models';
 
+interface DecodedTokenPayload {
+  exp: number;
+  sub?: string;
+  roles?: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -55,7 +61,7 @@ export class AuthService {
             accessToken: response.data.accessToken,
             refreshToken: response.data.refreshToken
           });
-          this.currentUserSubject.next({
+          this.setCurrentUser({
             id: response.data.id,
             email: response.data.email,
             name: response.data.name,
@@ -117,6 +123,7 @@ export class AuthService {
 
   private setAuthState(tokens: { accessToken: string; refreshToken: string }): void {
     localStorage.setItem(this.TOKEN_KEY, JSON.stringify(tokens));
+    this.setCurrentUserFromToken(tokens.accessToken);
     this.isAuthenticatedSubject.next(true);
   }
 
@@ -134,12 +141,34 @@ export class AuthService {
 
   private isTokenValid(token: string): boolean {
     try {
-      const decoded: any = jwtDecode(token);
+      const decoded: DecodedTokenPayload = jwtDecode(token);
       const currentTime = Date.now() / 1000;
       return decoded.exp > currentTime;
     } catch {
       return false;
     }
+  }
+
+  private setCurrentUserFromToken(token: string): void {
+    try {
+      const decoded: DecodedTokenPayload = jwtDecode(token);
+      const roles = decoded.roles
+        ? decoded.roles.split(',').map(role => role.trim()).filter(Boolean)
+        : [];
+
+      this.setCurrentUser({
+        id: null,
+        email: decoded.sub || '',
+        name: '',
+        roles
+      });
+    } catch {
+      this.currentUserSubject.next(null);
+    }
+  }
+
+  private setCurrentUser(user: { id: number | null; email: string; name: string; roles: string[] }): void {
+    this.currentUserSubject.next(user);
   }
 
   hasRole(role: string): boolean {
@@ -157,5 +186,9 @@ export class AuthService {
 
   isEmployee(): boolean {
     return this.hasRole('ROLE_EMPLOYEE');
+  }
+
+  getCurrentUser(): { id: number | null; email: string; name: string; roles: string[] } | null {
+    return this.currentUserSubject.value;
   }
 }

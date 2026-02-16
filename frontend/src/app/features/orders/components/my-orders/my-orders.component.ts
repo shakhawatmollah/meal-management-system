@@ -10,6 +10,9 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatChip } from '@angular/material/chips';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
+import { OrderService } from '../../../../core/services/api/order-api.service';
+import { AuthService } from '../../../../core/services/auth.service';
+import { MealOrder } from '../../../../core/models/api.models';
 
 @Component({
   selector: 'app-my-orders',
@@ -91,6 +94,9 @@ import { Router } from '@angular/router';
                   </button>
                 </td>
               </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
             </table>
 
             <mat-paginator [length]="totalElements" 
@@ -168,7 +174,7 @@ import { Router } from '@angular/router';
   `]
 })
 export class MyOrdersComponent {
-  orders: any[] = [];
+  orders: MealOrder[] = [];
   totalElements = 0;
   pageSize = 10;
   isLoading = false;
@@ -176,6 +182,8 @@ export class MyOrdersComponent {
   displayedColumns: string[] = ['id', 'mealName', 'quantity', 'totalPrice', 'status', 'orderDate', 'actions'];
 
   constructor(
+    private orderService: OrderService,
+    private authService: AuthService,
     private router: Router,
     private snackBar: MatSnackBar
   ) {}
@@ -185,30 +193,33 @@ export class MyOrdersComponent {
   }
 
   loadMyOrders(): void {
-    this.isLoading = true;
-    // TODO: Implement order service call to get current user's orders
-    setTimeout(() => {
-      this.orders = [
-        { 
-          id: 1, 
-          mealName: 'Pizza', 
-          quantity: 2, 
-          totalPrice: 20.00, 
-          status: 'PENDING',
-          orderDate: new Date()
-        },
-        { 
-          id: 2, 
-          mealName: 'Burger', 
-          quantity: 1, 
-          totalPrice: 12.00, 
-          status: 'COMPLETED',
-          orderDate: new Date(Date.now() - 86400000) // Yesterday
-        }
-      ];
-      this.totalElements = 2;
+    const currentUser = this.authService.getCurrentUser();
+    if (!currentUser?.id) {
+      this.snackBar.open('Please sign in again to load your orders', 'Close', {
+        duration: 4000,
+        horizontalPosition: 'end',
+        verticalPosition: 'top'
+      });
       this.isLoading = false;
-    }, 1000);
+      return;
+    }
+
+    this.isLoading = true;
+    this.orderService.getMyOrders(currentUser.id).subscribe({
+      next: (response) => {
+        this.orders = response.data ?? [];
+        this.totalElements = this.orders.length;
+        this.isLoading = false;
+      },
+      error: () => {
+        this.isLoading = false;
+        this.snackBar.open('Failed to load your orders', 'Close', {
+          duration: 3000,
+          horizontalPosition: 'end',
+          verticalPosition: 'top'
+        });
+      }
+    });
   }
 
   createNewOrder(): void {
@@ -216,19 +227,28 @@ export class MyOrdersComponent {
   }
 
   viewOrderDetails(id: number): void {
-    // TODO: Navigate to order details or show modal
-    console.log('View order details:', id);
+    this.snackBar.open(`Order #${id} selected`, 'Close', { duration: 2000 });
   }
 
   cancelOrder(id: number): void {
     if (confirm('Are you sure you want to cancel this order?')) {
-      // TODO: Implement cancel order service call
-      this.snackBar.open('Order cancelled successfully', 'Close', {
-        duration: 3000,
-        horizontalPosition: 'end',
-        verticalPosition: 'top'
+      this.orderService.cancelOrder(id).subscribe({
+        next: () => {
+          this.snackBar.open('Order cancelled successfully', 'Close', {
+            duration: 3000,
+            horizontalPosition: 'end',
+            verticalPosition: 'top'
+          });
+          this.loadMyOrders();
+        },
+        error: () => {
+          this.snackBar.open('Failed to cancel order', 'Close', {
+            duration: 3000,
+            horizontalPosition: 'end',
+            verticalPosition: 'top'
+          });
+        }
       });
-      this.loadMyOrders();
     }
   }
 
@@ -236,9 +256,8 @@ export class MyOrdersComponent {
     switch (status) {
       case 'PENDING': return 'primary';
       case 'CONFIRMED': return 'accent';
-      case 'PREPARING': return 'warn';
-      case 'READY': return 'primary';
-      case 'COMPLETED': return 'primary';
+      case 'PREPARED': return 'warn';
+      case 'DELIVERED': return 'primary';
       case 'CANCELLED': return 'warn';
       default: return '';
     }

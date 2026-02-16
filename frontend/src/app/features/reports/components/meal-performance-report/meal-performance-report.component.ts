@@ -1,6 +1,7 @@
 import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
+import { MealPerformanceReport } from '../../../../core/services/report.service';
 
 @Component({
   selector: 'app-meal-performance-report',
@@ -65,11 +66,28 @@ import { MatCardModule } from '@angular/material/card';
 })
 export class MealPerformanceReportComponent implements OnChanges {
   
-  @Input() data: any;
+  @Input() data!: MealPerformanceReport;
   
   ngOnChanges(changes: SimpleChanges) {
     if (changes['data'] && this.data) {
       console.log('Meal performance report data loaded:', this.data);
     }
+  }
+
+  getTotalMealOrders(): number {
+    return this.data?.mealPerformance?.reduce((sum, item) => sum + (item.timesOrdered || 0), 0) || 0;
+  }
+
+  getTotalRevenue(): number {
+    return this.data?.mealPerformance?.reduce((sum, item) => sum + (item.totalRevenue || 0), 0) || 0;
+  }
+
+  getAverageOrderValue(): number {
+    const meals = this.data?.mealPerformance || [];
+    if (meals.length === 0) {
+      return 0;
+    }
+    const total = meals.reduce((sum, item) => sum + (item.avgOrderValue || 0), 0);
+    return total / meals.length;
   }
 }

@@ -4,7 +4,6 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import {
   ApiResponse,
-  PageResponse,
   Meal,
   MealRequest,
   SearchParams
@@ -18,9 +17,9 @@ export class MealService {
 
   constructor(private http: HttpClient) {}
 
-  getMeals(params?: SearchParams): Observable<ApiResponse<PageResponse<Meal>>> {
+  getMeals(params?: SearchParams): Observable<ApiResponse<Meal[]>> {
     const queryParams = this.buildQueryParams(params);
-    return this.http.get<ApiResponse<PageResponse<Meal>>>(`${this.API_URL}${queryParams}`);
+    return this.http.get<ApiResponse<Meal[]>>(`${this.API_URL}${queryParams}`);
   }
 
   getMeal(id: number): Observable<ApiResponse<Meal>> {
@@ -50,7 +49,8 @@ export class MealService {
     
     if (params.page !== undefined) query.set('page', params.page.toString());
     if (params.size !== undefined) query.set('size', params.size.toString());
-    if (params.sort) query.set('sort', `${params.sort},${params.direction || 'ASC'}`);
+    if (params.sort) query.set('sortBy', params.sort);
+    if (params.direction) query.set('direction', params.direction);
     if (params.search) query.set('search', params.search);
     if (params.available !== undefined) query.set('available', params.available.toString());
     if (params.type) query.set('type', params.type);
