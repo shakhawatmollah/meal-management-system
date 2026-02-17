@@ -8,11 +8,13 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MealService } from '../../../../core/services/api/meal-api.service';
 import { Meal, MealRequest } from '../../../../core/models/api.models';
+import { withLoading } from '../../../../shared/services/loading.operator';
 
 @Component({
   selector: 'app-meal-form',
@@ -27,7 +29,8 @@ import { Meal, MealRequest } from '../../../../core/models/api.models';
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
-    MatSelectModule
+    MatSelectModule,
+    MatCheckboxModule
   ],
   template: `
     <div class="meal-form-container">
@@ -108,12 +111,11 @@ import { Meal, MealRequest } from '../../../../core/models/api.models';
               </mat-error>
             </mat-form-field>
 
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Availability</mat-label>
+            <div class="full-width availability-field">
               <mat-checkbox formControlName="available">
                 Available for ordering
               </mat-checkbox>
-            </mat-form-field>
+            </div>
 
             <div class="button-container">
               <button mat-raised-button 
@@ -155,6 +157,12 @@ import { Meal, MealRequest } from '../../../../core/models/api.models';
     .full-width {
       width: 100%;
       margin-bottom: 1rem;
+    }
+
+    .availability-field {
+      display: flex;
+      align-items: center;
+      min-height: 56px;
     }
 
     .button-container {
@@ -224,8 +232,11 @@ export class MealFormComponent {
   }
 
   loadMeal(id: number): void {
-    this.isLoading = true;
-    this.mealService.getMeal(id).subscribe({
+    this.mealService.getMeal(id).pipe(
+      withLoading((loading) => {
+        this.isLoading = loading;
+      })
+    ).subscribe({
       next: (response) => {
         const meal = response.data;
         this.mealForm.patchValue({
@@ -236,10 +247,8 @@ export class MealFormComponent {
           dailyCapacity: meal.dailyCapacity,
           available: meal.available
         });
-        this.isLoading = false;
       },
-      error: (error) => {
-        this.isLoading = false;
+      error: () => {
         this.snackBar.open('Failed to load meal', 'Close', {
           duration: 3000,
           horizontalPosition: 'end',
@@ -251,15 +260,18 @@ export class MealFormComponent {
 
   onSubmit(): void {
     if (this.mealForm.valid) {
-      this.isLoading = true;
       const mealRequest: MealRequest = this.mealForm.value;
       
       const operation = this.isEditMode 
         ? this.mealService.updateMeal(this.mealId!, mealRequest)
         : this.mealService.createMeal(mealRequest);
       
-      operation.subscribe({
-        next: (response) => {
+      operation.pipe(
+        withLoading((loading) => {
+          this.isLoading = loading;
+        })
+      ).subscribe({
+        next: () => {
           this.snackBar.open(
             `Meal ${this.isEditMode ? 'updated' : 'created'} successfully!`, 
             'Close', 
@@ -271,8 +283,7 @@ export class MealFormComponent {
           );
           this.router.navigate(['/meals']);
         },
-        error: (error) => {
-          this.isLoading = false;
+        error: () => {
           this.snackBar.open(
             `Failed to ${this.isEditMode ? 'update' : 'create'} meal`, 
             'Close', 
@@ -282,9 +293,6 @@ export class MealFormComponent {
               verticalPosition: 'top'
             }
           );
-        },
-        complete: () => {
-          this.isLoading = false;
         }
       });
     }

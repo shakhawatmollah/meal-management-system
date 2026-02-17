@@ -13,6 +13,7 @@ import { Router } from '@angular/router';
 import { OrderService } from '../../../../core/services/api/order-api.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { MealOrder } from '../../../../core/models/api.models';
+import { withLoading } from '../../../../shared/services/loading.operator';
 
 @Component({
   selector: 'app-my-orders',
@@ -204,15 +205,16 @@ export class MyOrdersComponent {
       return;
     }
 
-    this.isLoading = true;
-    this.orderService.getMyOrders(currentUser.id).subscribe({
+    this.orderService.getMyOrders(currentUser.id).pipe(
+      withLoading((loading) => {
+        this.isLoading = loading;
+      })
+    ).subscribe({
       next: (response) => {
         this.orders = response.data ?? [];
         this.totalElements = this.orders.length;
-        this.isLoading = false;
       },
       error: () => {
-        this.isLoading = false;
         this.snackBar.open('Failed to load your orders', 'Close', {
           duration: 3000,
           horizontalPosition: 'end',

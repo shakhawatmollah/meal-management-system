@@ -13,10 +13,10 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
-import { Observable } from 'rxjs';
 import { MealService } from '../../../../core/services/api/meal-api.service';
 import { Meal, MealRequest, SearchParams } from '../../../../core/models/api.models';
 import { MatChip } from "@angular/material/chips";
+import { withLoading } from '../../../../shared/services/loading.operator';
 
 @Component({
   selector: 'app-meal-list',
@@ -151,6 +151,9 @@ import { MatChip } from "@angular/material/chips";
                   </button>
                 </td>
               </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
             </table>
 
             <mat-paginator [length]="totalElements" 
@@ -259,15 +262,16 @@ export class MealListComponent {
   }
 
   loadMeals(params?: SearchParams): void {
-    this.isLoading = true;
-    this.mealService.getMeals(params).subscribe({
+    this.mealService.getMeals(params).pipe(
+      withLoading((loading) => {
+        this.isLoading = loading;
+      })
+    ).subscribe({
       next: (response) => {
         this.meals = response.data ?? [];
         this.totalElements = response.pagination?.totalElements ?? this.meals.length;
-        this.isLoading = false;
       },
-      error: (error) => {
-        this.isLoading = false;
+      error: () => {
         this.snackBar.open('Failed to load meals', 'Close', {
           duration: 3000,
           horizontalPosition: 'end',

@@ -11,6 +11,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { OrderService } from '../../../../core/services/api/order-api.service';
 import { MealOrder, SearchParams } from '../../../../core/models/api.models';
+import { withLoading } from '../../../../shared/services/loading.operator';
 
 @Component({
   selector: 'app-order-list',
@@ -150,15 +151,16 @@ export class OrderListComponent {
   }
 
   loadOrders(params?: SearchParams): void {
-    this.isLoading = true;
-    this.orderService.getOrders(params).subscribe({
+    this.orderService.getOrders(params).pipe(
+      withLoading((loading) => {
+        this.isLoading = loading;
+      })
+    ).subscribe({
       next: (response) => {
         this.orders = response.data ?? [];
         this.totalElements = response.pagination?.totalElements ?? this.orders.length;
-        this.isLoading = false;
       },
       error: () => {
-        this.isLoading = false;
         this.snackBar.open('Failed to load orders', 'Close', {
           duration: 3000,
           horizontalPosition: 'end',

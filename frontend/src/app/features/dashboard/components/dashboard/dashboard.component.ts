@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { AfterViewInit, Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -7,11 +7,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { Router } from '@angular/router';
-import { Observable } from 'rxjs';
 import { DashboardService } from '../../../../core/services/api/dashboard-api.service';
 import { DashboardStats } from '../../../../core/models/api.models';
-import { CurrencyPipe } from '@angular/common';
+import { withLoading } from '../../../../shared/services/loading.operator';
 
 @Component({
   selector: 'app-dashboard',
@@ -297,7 +295,7 @@ import { CurrencyPipe } from '@angular/common';
     }
   `]
 })
-export class DashboardComponent {
+export class DashboardComponent implements AfterViewInit {
   stats: DashboardStats | null = null;
   isLoading = true;
 
@@ -306,18 +304,20 @@ export class DashboardComponent {
     private snackBar: MatSnackBar
   ) {}
 
-  ngOnInit(): void {
-    this.loadDashboardStats();
+  ngAfterViewInit(): void {
+    setTimeout(() => this.loadDashboardStats(), 0);
   }
 
   private loadDashboardStats(): void {
-    this.dashboardService.getDashboardStats().subscribe({
+    this.dashboardService.getDashboardStats().pipe(
+      withLoading((loading) => {
+        this.isLoading = loading;
+      })
+    ).subscribe({
       next: (response) => {
         this.stats = response.data;
-        this.isLoading = false;
       },
-      error: (error) => {
-        this.isLoading = false;
+      error: () => {
         this.snackBar.open('Failed to load dashboard data', 'Close', {
           duration: 3000,
           horizontalPosition: 'end',

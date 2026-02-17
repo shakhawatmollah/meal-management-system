@@ -13,10 +13,10 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
-import { Observable } from 'rxjs';
 import { EmployeeService } from '../../../../core/services/api/employee-api.service';
 import { Employee, EmployeeRequest, SearchParams } from '../../../../core/models/api.models';
 import { MatChip } from "@angular/material/chips";
+import { withLoading } from '../../../../shared/services/loading.operator';
 
 @Component({
   selector: 'app-employee-list',
@@ -156,6 +156,9 @@ import { MatChip } from "@angular/material/chips";
                   </button>
                 </td>
               </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
             </table>
 
             <mat-paginator [length]="totalElements" 
@@ -256,15 +259,16 @@ export class EmployeeListComponent {
   }
 
   loadEmployees(params?: SearchParams): void {
-    this.isLoading = true;
-    this.employeeService.getEmployees(params).subscribe({
+    this.employeeService.getEmployees(params).pipe(
+      withLoading((loading) => {
+        this.isLoading = loading;
+      })
+    ).subscribe({
       next: (response) => {
         this.employees = response.data ?? [];
         this.totalElements = response.pagination?.totalElements ?? this.employees.length;
-        this.isLoading = false;
       },
-      error: (error) => {
-        this.isLoading = false;
+      error: () => {
         this.snackBar.open('Failed to load employees', 'Close', {
           duration: 3000,
           horizontalPosition: 'end',

@@ -13,6 +13,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { EmployeeService } from '../../../../core/services/api/employee-api.service';
 import { Employee, EmployeeRequest } from '../../../../core/models/api.models';
+import { withLoading } from '../../../../shared/services/loading.operator';
 
 @Component({
   selector: 'app-employee-form',
@@ -237,8 +238,11 @@ export class EmployeeFormComponent {
   }
 
   private loadEmployee(id: number): void {
-    this.isLoading = true;
-    this.employeeService.getEmployee(id).subscribe({
+    this.employeeService.getEmployee(id).pipe(
+      withLoading((loading) => {
+        this.isLoading = loading;
+      })
+    ).subscribe({
       next: (response) => {
         const employee = response.data;
         this.employeeForm.patchValue({
@@ -251,11 +255,8 @@ export class EmployeeFormComponent {
         
         // Remove password field in edit mode
         this.employeeForm.removeControl('password');
-        
-        this.isLoading = false;
       },
-      error: (error) => {
-        this.isLoading = false;
+      error: () => {
         this.snackBar.open('Failed to load employee', 'Close', {
           duration: 3000,
           horizontalPosition: 'end',
@@ -271,7 +272,6 @@ export class EmployeeFormComponent {
       return;
     }
 
-    this.isLoading = true;
     const employeeData: EmployeeRequest = this.employeeForm.value;
 
     if (this.isEditMode && this.employeeId) {
@@ -282,9 +282,12 @@ export class EmployeeFormComponent {
   }
 
   private createEmployee(employeeData: EmployeeRequest): void {
-    this.employeeService.createEmployee(employeeData).subscribe({
+    this.employeeService.createEmployee(employeeData).pipe(
+      withLoading((loading) => {
+        this.isLoading = loading;
+      })
+    ).subscribe({
       next: () => {
-        this.isLoading = false;
         this.snackBar.open('Employee created successfully', 'Close', {
           duration: 3000,
           horizontalPosition: 'end',
@@ -292,8 +295,7 @@ export class EmployeeFormComponent {
         });
         this.router.navigate(['/employees']);
       },
-      error: (error) => {
-        this.isLoading = false;
+      error: () => {
         this.snackBar.open('Failed to create employee', 'Close', {
           duration: 3000,
           horizontalPosition: 'end',
@@ -304,9 +306,12 @@ export class EmployeeFormComponent {
   }
 
   private updateEmployee(id: number, employeeData: EmployeeRequest): void {
-    this.employeeService.updateEmployee(id, employeeData).subscribe({
+    this.employeeService.updateEmployee(id, employeeData).pipe(
+      withLoading((loading) => {
+        this.isLoading = loading;
+      })
+    ).subscribe({
       next: () => {
-        this.isLoading = false;
         this.snackBar.open('Employee updated successfully', 'Close', {
           duration: 3000,
           horizontalPosition: 'end',
@@ -314,8 +319,7 @@ export class EmployeeFormComponent {
         });
         this.router.navigate(['/employees']);
       },
-      error: (error) => {
-        this.isLoading = false;
+      error: () => {
         this.snackBar.open('Failed to update employee', 'Close', {
           duration: 3000,
           horizontalPosition: 'end',

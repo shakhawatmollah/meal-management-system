@@ -12,6 +12,7 @@ import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AuthService } from '../../../../core/services/auth.service';
 import { LoginRequest } from '../../../../core/models/api.models';
+import { withLoading } from '../../../../shared/services/loading.operator';
 
 @Component({
   selector: 'app-login',
@@ -158,11 +159,14 @@ export class LoginComponent {
 
   onSubmit(): void {
     if (this.loginForm.valid) {
-      this.isLoading = true;
       const loginRequest: LoginRequest = this.loginForm.value;
       
-      this.authService.login(loginRequest).subscribe({
-        next: (response) => {
+      this.authService.login(loginRequest).pipe(
+        withLoading((loading) => {
+          this.isLoading = loading;
+        })
+      ).subscribe({
+        next: () => {
           this.snackBar.open('Login successful!', 'Close', {
             duration: 3000,
             horizontalPosition: 'end',
@@ -170,16 +174,12 @@ export class LoginComponent {
           });
           this.router.navigate(['/dashboard']);
         },
-        error: (error) => {
-          this.isLoading = false;
+        error: () => {
           this.snackBar.open('Login failed. Please check your credentials.', 'Close', {
             duration: 5000,
             horizontalPosition: 'end',
             verticalPosition: 'top'
           });
-        },
-        complete: () => {
-          this.isLoading = false;
         }
       });
     }

@@ -13,6 +13,7 @@ import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AuthService } from '../../../../core/services/auth.service';
 import { RegisterRequest } from '../../../../core/models/api.models';
+import { withLoading } from '../../../../shared/services/loading.operator';
 
 @Component({
   selector: 'app-register',
@@ -194,11 +195,14 @@ export class RegisterComponent {
 
   onSubmit(): void {
     if (this.registerForm.valid) {
-      this.isLoading = true;
       const registerRequest: RegisterRequest = this.registerForm.value;
       
-      this.authService.register(registerRequest).subscribe({
-        next: (response) => {
+      this.authService.register(registerRequest).pipe(
+        withLoading((loading) => {
+          this.isLoading = loading;
+        })
+      ).subscribe({
+        next: () => {
           this.snackBar.open('Registration successful! Please login.', 'Close', {
             duration: 3000,
             horizontalPosition: 'end',
@@ -206,16 +210,12 @@ export class RegisterComponent {
           });
           this.router.navigate(['/login']);
         },
-        error: (error) => {
-          this.isLoading = false;
+        error: () => {
           this.snackBar.open('Registration failed. Please try again.', 'Close', {
             duration: 5000,
             horizontalPosition: 'end',
             verticalPosition: 'top'
           });
-        },
-        complete: () => {
-          this.isLoading = false;
         }
       });
     }

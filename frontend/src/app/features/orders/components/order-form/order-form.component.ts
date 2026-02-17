@@ -13,6 +13,7 @@ import { MealService } from '../../../../core/services/api/meal-api.service';
 import { OrderService } from '../../../../core/services/api/order-api.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { Meal, MealOrderRequest } from '../../../../core/models/api.models';
+import { withLoading } from '../../../../shared/services/loading.operator';
 
 @Component({
   selector: 'app-order-form',
@@ -68,11 +69,11 @@ import { Meal, MealOrderRequest } from '../../../../core/models/api.models';
             </mat-form-field>
 
             <div class="form-actions">
-              <button mat-raised-button type="submit" color="primary" [disabled]="orderForm.invalid">
+              <button mat-raised-button type="submit" color="primary" [disabled]="orderForm.invalid || isLoading">
                 <mat-icon>{{ isEdit ? 'save' : 'add' }}</mat-icon>
                 {{ isEdit ? 'Update Order' : 'Create Order' }}
               </button>
-              <button mat-button type="button" (click)="cancel()">
+              <button mat-button type="button" (click)="cancel()" [disabled]="isLoading">
                 Cancel
               </button>
             </div>
@@ -107,6 +108,7 @@ import { Meal, MealOrderRequest } from '../../../../core/models/api.models';
 export class OrderFormComponent {
   orderForm: FormGroup;
   isEdit = false;
+  isLoading = false;
   availableMeals: Meal[] = [];
   minOrderDate: string;
 
@@ -134,7 +136,11 @@ export class OrderFormComponent {
   }
 
   loadAvailableMeals(): void {
-    this.mealService.getAvailableMeals().subscribe({
+    this.mealService.getAvailableMeals().pipe(
+      withLoading((loading) => {
+        this.isLoading = loading;
+      })
+    ).subscribe({
       next: (response) => {
         this.availableMeals = response.data ?? [];
       },
@@ -171,7 +177,11 @@ export class OrderFormComponent {
       quantity: Number(formValue.quantity)
     };
 
-    this.orderService.createOrder(orderData).subscribe({
+    this.orderService.createOrder(orderData).pipe(
+      withLoading((loading) => {
+        this.isLoading = loading;
+      })
+    ).subscribe({
       next: () => {
         this.snackBar.open('Order created successfully', 'Close', {
           duration: 3000,

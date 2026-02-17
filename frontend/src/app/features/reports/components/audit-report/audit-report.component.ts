@@ -49,7 +49,7 @@ import { AuditReport } from '../../../../core/services/report.service';
                 <span class="ip">IP: {{ activity.ipAddress }}</span>
               </div>
             </div>
-            <div class="activity-item" *ngIf="!data.suspiciousActivity?.length">
+            <div class="activity-item" *ngIf="!data.suspiciousActivity.length">
               <span>No suspicious activities in selected range.</span>
             </div>
           </div>
