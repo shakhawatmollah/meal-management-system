@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -12,7 +12,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { EmployeeService } from '../../../../core/services/api/employee-api.service';
-import { Employee, EmployeeRequest } from '../../../../core/models/api.models';
+import { EmployeeRequest } from '../../../../core/models/api.models';
 import { withLoading } from '../../../../shared/services/loading.operator';
 
 @Component({
@@ -201,7 +201,7 @@ import { withLoading } from '../../../../shared/services/loading.operator';
     }
   `]
 })
-export class EmployeeFormComponent {
+export class EmployeeFormComponent implements OnInit {
   employeeForm: FormGroup;
   isEditMode = false;
   isLoading = false;

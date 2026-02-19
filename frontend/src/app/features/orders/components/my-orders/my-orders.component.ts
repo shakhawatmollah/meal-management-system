@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component, NgZone, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule } from '@angular/material/paginator';
@@ -13,7 +13,7 @@ import { Router } from '@angular/router';
 import { OrderService } from '../../../../core/services/api/order-api.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { MealOrder } from '../../../../core/models/api.models';
-import { withLoading } from '../../../../shared/services/loading.operator';
+import { finalize, retry } from 'rxjs';
 
 @Component({
   selector: 'app-my-orders',
@@ -47,7 +47,7 @@ import { withLoading } from '../../../../shared/services/loading.operator';
             <mat-spinner diameter="40"></mat-spinner>
           </div>
           
-          <div class="table-container" *ngIf="!isLoading && orders.length > 0">
+          <div class="table-container" *ngIf="orders.length > 0">
             <table mat-table [dataSource]="orders" matSort>
               <ng-container matColumnDef="id">
                 <th mat-header-cell *matHeaderCellDef mat-sort-header>Order ID</th>
@@ -174,7 +174,7 @@ import { withLoading } from '../../../../shared/services/loading.operator';
     }
   `]
 })
-export class MyOrdersComponent {
+export class MyOrdersComponent implements OnInit {
   orders: MealOrder[] = [];
   totalElements = 0;
   pageSize = 10;
@@ -186,39 +186,49 @@ export class MyOrdersComponent {
     private orderService: OrderService,
     private authService: AuthService,
     private router: Router,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private ngZone: NgZone,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
-    this.loadMyOrders();
+    setTimeout(() => this.loadMyOrders(), 0);
   }
 
   loadMyOrders(): void {
-    const currentUser = this.authService.getCurrentUser();
-    if (!currentUser?.id) {
+    const resolvedUserId = this.authService.resolveCurrentUserId();
+    if (!resolvedUserId) {
       this.snackBar.open('Please sign in again to load your orders', 'Close', {
         duration: 4000,
         horizontalPosition: 'end',
         verticalPosition: 'top'
       });
-      this.isLoading = false;
+      this.setLoading(false);
       return;
     }
 
-    this.orderService.getMyOrders(currentUser.id).pipe(
-      withLoading((loading) => {
-        this.isLoading = loading;
+    this.setLoading(true);
+    this.orderService.getMyOrders(resolvedUserId).pipe(
+      retry({ count: 1 }),
+      finalize(() => {
+        this.setLoading(false);
       })
     ).subscribe({
       next: (response) => {
-        this.orders = response.data ?? [];
-        this.totalElements = this.orders.length;
+        this.ngZone.run(() => {
+          this.orders = response.data ?? [];
+          this.totalElements = this.orders.length;
+          this.flushView();
+        });
       },
       error: () => {
-        this.snackBar.open('Failed to load your orders', 'Close', {
-          duration: 3000,
-          horizontalPosition: 'end',
-          verticalPosition: 'top'
+        this.ngZone.run(() => {
+          this.snackBar.open('Failed to load your orders', 'Close', {
+            duration: 3000,
+            horizontalPosition: 'end',
+            verticalPosition: 'top'
+          });
+          this.flushView();
         });
       }
     });
@@ -263,5 +273,18 @@ export class MyOrdersComponent {
       case 'CANCELLED': return 'warn';
       default: return '';
     }
+  }
+
+  private setLoading(value: boolean): void {
+    setTimeout(() => {
+      this.ngZone.run(() => {
+        this.isLoading = value;
+        this.flushView();
+      });
+    }, 0);
+  }
+
+  private flushView(): void {
+    queueMicrotask(() => this.cdr.detectChanges());
   }
 }

@@ -10,6 +10,7 @@ import { inject } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { AuthService } from '../core/services/auth.service';
 import { Router } from '@angular/router';
+import { environment } from '../../environments/environment';
 
 export const errorInterceptor = (req: HttpRequest<unknown>, next: HttpHandlerFn): Observable<HttpEvent<unknown>> => {
   const snackBar = inject(MatSnackBar);
@@ -19,6 +20,19 @@ export const errorInterceptor = (req: HttpRequest<unknown>, next: HttpHandlerFn)
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
       let errorMessage = 'An unexpected error occurred';
+
+      if (environment.enableDebug) {
+        console.error(
+          '[HTTP ERROR]',
+          {
+            method: req.method,
+            url: req.urlWithParams,
+            status: error.status,
+            message: error.message,
+            body: error.error
+          }
+        );
+      }
 
       if (error.error instanceof ErrorEvent) {
         // Client-side error

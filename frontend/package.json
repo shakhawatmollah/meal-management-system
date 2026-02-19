@@ -5,8 +5,13 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
+    "build:dev": "ng build --configuration=development",
+    "build:dev:isolated": "ng build --configuration=development --output-path=dist/meal-management-frontend-dev --delete-output-path=false",
     "test": "ng test",
-    "lint": "ng lint"
+    "test:ci": "ng test --watch=false --browsers=ChromeHeadlessCI",
+    "test:local": "ng test --watch=false --browsers=ChromeHeadlessCI --source-map=false",
+    "lint": "ng lint",
+    "verify:migration": "ng lint && ng build --configuration=development --output-path=dist/meal-management-frontend-dev --delete-output-path=false"
   },
   "private": true,
   "dependencies": {

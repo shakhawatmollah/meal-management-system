@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -105,7 +105,7 @@ import { withLoading } from '../../../../shared/services/loading.operator';
     }
   `]
 })
-export class OrderFormComponent {
+export class OrderFormComponent implements OnInit {
   orderForm: FormGroup;
   isEdit = false;
   isLoading = false;

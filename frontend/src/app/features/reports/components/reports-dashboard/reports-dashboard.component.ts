@@ -16,195 +16,345 @@ import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 
 // Report component imports
+import { DailyOperationsReportComponent } from '../daily-operations-report/daily-operations-report.component';
+import { MonthlyFinancialReportComponent } from '../monthly-financial-report/monthly-financial-report.component';
+import { EmployeePerformanceReportComponent } from '../employee-performance-report/employee-performance-report.component';
 import { MealPerformanceReportComponent } from '../meal-performance-report/meal-performance-report.component';
 import { AuditReportComponent } from '../audit-report/audit-report.component';
 
 @Component({
   selector: 'app-reports-dashboard',
   template: `
-    <div class="reports-container">
-      <mat-card class="mb-4">
-        <mat-card-header>
-          <mat-card-title class="d-flex justify-content-between align-items-center">
-            <span>Management Reports Dashboard</span>
-            <button mat-icon-button (click)="exportCurrentReport()" 
-                    [disabled]="!generatedReport || loading"
-                    matTooltip="Export Report">
-              <mat-icon>download</mat-icon>
-            </button>
-          </mat-card-title>
-        </mat-card-header>
-        
+    <div class="reports-shell">
+      <div class="hero">
+        <div>
+          <p class="eyebrow">Analytics Center</p>
+          <h1>Management Reports Dashboard</h1>
+          <p class="subtitle">Generate operational and financial insights by date range, team, and meal performance.</p>
+        </div>
+        <button
+          mat-raised-button
+          color="primary"
+          (click)="exportCurrentReport('csv')"
+          [disabled]="!generatedReport || loading">
+          <mat-icon>download</mat-icon>
+          Export CSV
+        </button>
+        <button
+          mat-stroked-button
+          (click)="exportCurrentReport('json')"
+          [disabled]="!generatedReport || loading">
+          <mat-icon>data_object</mat-icon>
+          Export JSON
+        </button>
+      </div>
+
+      <mat-card class="control-card">
         <mat-card-content>
-          <!-- Report Type Selection -->
-          <div class="row mb-3">
-            <div class="col-md-4">
-              <mat-form-field appearance="outline" class="w-100">
-                <mat-label>Report Type</mat-label>
-                <mat-select [(ngModel)]="selectedReportType" 
-                           (selectionChange)="onReportTypeChange()">
-                  <mat-option value="daily">Daily Operations</mat-option>
-                  <mat-option value="monthly">Monthly Financial</mat-option>
-                  <mat-option value="employee">Employee Performance</mat-option>
-                  <mat-option value="meal">Meal Performance</mat-option>
-                  <mat-option value="audit">Audit Trail</mat-option>
-                </mat-select>
-              </mat-form-field>
-            </div>
-            
-            <div class="col-md-4" *ngIf="selectedReportType !== 'audit'">
-              <mat-form-field appearance="outline" class="w-100">
-                <mat-label *ngIf="selectedReportType === 'daily'">Select Date</mat-label>
-                <mat-label *ngIf="selectedReportType === 'monthly' || selectedReportType === 'employee' || selectedReportType === 'meal'">Select Month</mat-label>
-                <input matInput 
-                       [matDatepicker]="datePicker" 
-                       [(ngModel)]="selectedDate"
-                       [matDatepickerFilter]="dateFilter">
-                <mat-datepicker-toggle matSuffix [for]="datePicker"></mat-datepicker-toggle>
-                <mat-datepicker #datePicker></mat-datepicker>
-              </mat-form-field>
-            </div>
-            
-            <div class="col-md-4" *ngIf="selectedReportType === 'audit'">
-              <mat-form-field appearance="outline" class="w-100">
-                <mat-label>Start Date</mat-label>
-                <input matInput 
-                       [matDatepicker]="startDatePicker" 
-                       [(ngModel)]="auditStartDate">
-                <mat-datepicker-toggle matSuffix [for]="startDatePicker"></mat-datepicker-toggle>
-                <mat-datepicker #startDatePicker></mat-datepicker>
-              </mat-form-field>
-            </div>
-            
-            <div class="col-md-4" *ngIf="selectedReportType === 'audit'">
-              <mat-form-field appearance="outline" class="w-100">
-                <mat-label>End Date</mat-label>
-                <input matInput 
-                       [matDatepicker]="endDatePicker" 
-                       [(ngModel)]="auditEndDate">
-                <mat-datepicker-toggle matSuffix [for]="endDatePicker"></mat-datepicker-toggle>
-                <mat-datepicker #endDatePicker></mat-datepicker>
-              </mat-form-field>
-            </div>
-            
-            <div class="col-md-4 d-flex align-items-end">
-              <button mat-raised-button 
-                      color="primary" 
-                      (click)="generateReport()" 
-                      [disabled]="!selectedReportType || !canGenerateReport() || loading"
-                      class="me-2">
-                <mat-icon *ngIf="!loading">assessment</mat-icon>
-                <mat-icon *ngIf="loading" class="spin">refresh</mat-icon>
-                {{ loading ? 'Generating...' : 'Generate Report' }}
-              </button>
-              
-              <button mat-stroked-button 
-                      (click)="resetForm()"
-                      [disabled]="loading">
-                <mat-icon>clear</mat-icon>
-                Reset
-              </button>
-            </div>
+          <div class="control-grid">
+            <mat-form-field appearance="outline">
+              <mat-label>Report Type</mat-label>
+              <mat-select [(ngModel)]="selectedReportType" (selectionChange)="onReportTypeChange()">
+                <mat-option value="daily">Daily Operations</mat-option>
+                <mat-option value="monthly">Monthly Financial</mat-option>
+                <mat-option value="employee">Employee Performance</mat-option>
+                <mat-option value="meal">Meal Performance</mat-option>
+                <mat-option value="audit">Audit Trail</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" *ngIf="selectedReportType !== 'audit'">
+              <mat-label>{{ selectedReportType === 'daily' ? 'Select Date' : 'Select Month' }}</mat-label>
+              <input
+                matInput
+                [matDatepicker]="datePicker"
+                [(ngModel)]="selectedDate"
+                [matDatepickerFilter]="dateFilter">
+              <mat-datepicker-toggle matSuffix [for]="datePicker"></mat-datepicker-toggle>
+              <mat-datepicker #datePicker></mat-datepicker>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" *ngIf="selectedReportType === 'audit'">
+              <mat-label>Start Date</mat-label>
+              <input matInput [matDatepicker]="startDatePicker" [(ngModel)]="auditStartDate">
+              <mat-datepicker-toggle matSuffix [for]="startDatePicker"></mat-datepicker-toggle>
+              <mat-datepicker #startDatePicker></mat-datepicker>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" *ngIf="selectedReportType === 'audit'">
+              <mat-label>End Date</mat-label>
+              <input matInput [matDatepicker]="endDatePicker" [(ngModel)]="auditEndDate">
+              <mat-datepicker-toggle matSuffix [for]="endDatePicker"></mat-datepicker-toggle>
+              <mat-datepicker #endDatePicker></mat-datepicker>
+            </mat-form-field>
+          </div>
+
+          <div class="preset-row">
+            <span class="preset-label">Quick Range</span>
+            <button mat-stroked-button type="button" (click)="applyPreset('thisMonth')">This Month</button>
+            <button mat-stroked-button type="button" (click)="applyPreset('lastMonth')">Last Month</button>
+            <button mat-stroked-button type="button" (click)="applyPreset('last7Days')">Last 7 Days</button>
+          </div>
+
+          <div class="action-row">
+            <button
+              mat-raised-button
+              color="primary"
+              (click)="generateReport()"
+              [disabled]="!selectedReportType || !canGenerateReport() || loading">
+              <mat-icon *ngIf="!loading">assessment</mat-icon>
+              <mat-icon *ngIf="loading" class="spin">refresh</mat-icon>
+              {{ loading ? 'Generating...' : 'Generate Report' }}
+            </button>
+
+            <button mat-stroked-button (click)="resetForm()" [disabled]="loading">
+              <mat-icon>clear</mat-icon>
+              Reset
+            </button>
           </div>
         </mat-card-content>
       </mat-card>
-      
-      <!-- Report Display -->
+
       <mat-card *ngIf="generatedReport" class="report-card">
         <mat-card-header>
           <mat-card-title>{{ getReportTitle() }}</mat-card-title>
           <mat-card-subtitle>{{ getReportSubtitle() }}</mat-card-subtitle>
         </mat-card-header>
-        
+
         <mat-card-content>
-          <!-- Daily Report -->
-          <div *ngIf="selectedReportType === 'daily' && generatedReport" class="daily-report">
-            <!-- <app-daily-operations-report [data]="generatedReport"></app-daily-operations-report> -->
-            <div class="placeholder">
-              <h4>Daily Operations Report</h4>
-              <p>Report data: {{ generatedReport | json }}</p>
-            </div>
+          <div class="kpi-grid">
+            <mat-card class="kpi" *ngFor="let metric of getHeadlineMetrics()">
+              <p class="kpi-label">{{ metric.label }}</p>
+              <h3 class="kpi-value">{{ metric.value }}</h3>
+            </mat-card>
           </div>
-          
-          <!-- Monthly Report -->
-          <div *ngIf="selectedReportType === 'monthly' && generatedReport" class="monthly-report">
-            <!-- <app-monthly-financial-report [data]="generatedReport"></app-monthly-financial-report> -->
-            <div class="placeholder">
-              <h4>Monthly Financial Report</h4>
-              <p>Report data: {{ generatedReport | json }}</p>
-            </div>
+
+          <div *ngIf="selectedReportType === 'daily'" class="generic-report">
+            <app-daily-operations-report [data]="generatedReport"></app-daily-operations-report>
           </div>
-          
-          <!-- Employee Performance Report -->
-          <div *ngIf="selectedReportType === 'employee' && generatedReport" class="employee-report">
-            <!-- <app-employee-performance-report [data]="generatedReport"></app-employee-performance-report> -->
-            <div class="placeholder">
-              <h4>Employee Performance Report</h4>
-              <p>Report data: {{ generatedReport | json }}</p>
-            </div>
+
+          <div *ngIf="selectedReportType === 'monthly'" class="generic-report">
+            <app-monthly-financial-report [data]="generatedReport"></app-monthly-financial-report>
           </div>
-          
-          <!-- Meal Performance Report -->
-          <div *ngIf="selectedReportType === 'meal' && generatedReport" class="meal-report">
+
+          <div *ngIf="selectedReportType === 'employee'" class="generic-report">
+            <app-employee-performance-report [data]="generatedReport"></app-employee-performance-report>
+          </div>
+
+          <div *ngIf="selectedReportType === 'meal'" class="meal-report">
             <app-meal-performance-report [data]="generatedReport"></app-meal-performance-report>
           </div>
-          
-          <!-- Audit Report -->
-          <div *ngIf="selectedReportType === 'audit' && generatedReport" class="audit-report">
+
+          <div *ngIf="selectedReportType === 'audit'" class="audit-report">
             <app-audit-report [data]="generatedReport"></app-audit-report>
           </div>
         </mat-card-content>
       </mat-card>
-      
-      <!-- Loading State -->
-      <div *ngIf="loading" class="text-center py-5">
-        <mat-spinner diameter="50"></mat-spinner>
-        <p class="mt-3">Generating report...</p>
+
+      <mat-card *ngIf="!generatedReport && !loading" class="empty-state">
+        <mat-card-content>
+          <mat-icon>insights</mat-icon>
+          <h3>Select filters and generate a report</h3>
+          <p>Pick a report type and date scope to view operational insights.</p>
+        </mat-card-content>
+      </mat-card>
+
+      <div *ngIf="loading" class="loading-state">
+        <mat-spinner diameter="52"></mat-spinner>
+        <p>Generating report...</p>
       </div>
     </div>
   `,
   styles: [`
-    .reports-container {
-      padding: 2rem;
-      max-width: 1400px;
+    .reports-shell {
+      --bg-1: #0f172a;
+      --bg-2: #111827;
+      --ink: #0f172a;
+      --muted: #64748b;
+      --line: #dbe2ea;
+      --brand: #0ea5e9;
+      padding: 1.25rem;
+      max-width: 1280px;
       margin: 0 auto;
     }
-    
-    .report-card {
-      margin-top: 1rem;
+
+    .hero {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 1.5rem;
+      border-radius: 18px;
+      color: #e2e8f0;
+      background: radial-gradient(1200px circle at 10% 0%, #1d4ed8 0%, var(--bg-1) 40%, var(--bg-2) 100%);
+      margin-bottom: 1rem;
     }
-    
+
+    .eyebrow {
+      margin: 0 0 0.35rem;
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #93c5fd;
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-size: 1.6rem;
+      line-height: 1.2;
+      font-weight: 700;
+    }
+
+    .subtitle {
+      margin: 0.45rem 0 0;
+      color: #cbd5e1;
+      max-width: 56ch;
+      font-size: 0.95rem;
+    }
+
+    .control-card {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      margin-bottom: 1rem;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+    }
+
+    .control-grid {
+      display: grid;
+      gap: 0.9rem;
+      grid-template-columns: repeat(3, minmax(220px, 1fr));
+      margin-bottom: 0.9rem;
+    }
+
+    .action-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.65rem;
+    }
+
+    .preset-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .preset-label {
+      font-size: 0.8rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-right: 0.2rem;
+    }
+
+    .report-card {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+    }
+
+    .kpi-grid {
+      display: grid;
+      gap: 0.75rem;
+      grid-template-columns: repeat(4, minmax(160px, 1fr));
+      margin-bottom: 1rem;
+    }
+
+    .kpi {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 0.85rem 0.95rem;
+      background: linear-gradient(160deg, #ffffff 0%, #f8fbff 100%);
+    }
+
+    .kpi-label {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .kpi-value {
+      margin: 0.35rem 0 0;
+      color: var(--ink);
+      font-size: 1.2rem;
+      font-weight: 700;
+    }
+
+    .generic-report {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 0.35rem;
+      background: #f8fafc;
+    }
+
+    .empty-state {
+      border: 1px dashed var(--line);
+      border-radius: 16px;
+      text-align: center;
+      background: #f8fafc;
+    }
+
+    .empty-state mat-icon {
+      font-size: 40px;
+      width: 40px;
+      height: 40px;
+      color: var(--brand);
+      margin-bottom: 0.6rem;
+    }
+
+    .empty-state h3 {
+      margin: 0 0 0.35rem;
+    }
+
+    .empty-state p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .loading-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 1.4rem 0.4rem;
+      color: var(--muted);
+    }
+
     .spin {
       animation: spin 1s linear infinite;
     }
-    
+
     @keyframes spin {
       100% { transform: rotate(360deg); }
     }
-    
-    .daily-report, .monthly-report, .employee-report, .meal-report, .audit-report {
-      margin-top: 2rem;
+
+    @media (max-width: 1024px) {
+      .control-grid {
+        grid-template-columns: repeat(2, minmax(220px, 1fr));
+      }
+
+      .kpi-grid {
+        grid-template-columns: repeat(2, minmax(160px, 1fr));
+      }
     }
-    
-    .placeholder {
-      padding: 2rem;
-      text-align: center;
-      background-color: #f5f5f5;
-      border-radius: 4px;
-    }
-    
-    .placeholder h4 {
-      margin-bottom: 1rem;
-      color: #333;
-    }
-    
-    .placeholder p {
-      color: #666;
-      font-family: monospace;
-      font-size: 0.8rem;
-      white-space: pre-wrap;
-      max-height: 300px;
-      overflow-y: auto;
+
+    @media (max-width: 720px) {
+      .hero {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .control-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .kpi-grid {
+        grid-template-columns: 1fr;
+      }
     }
   `],
   imports: [
@@ -218,6 +368,9 @@ import { AuditReportComponent } from '../audit-report/audit-report.component';
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
+    DailyOperationsReportComponent,
+    MonthlyFinancialReportComponent,
+    EmployeePerformanceReportComponent,
     MealPerformanceReportComponent,
     AuditReportComponent
   ],
@@ -403,8 +556,19 @@ export class ReportsDashboardComponent implements OnInit, OnDestroy {
       });
   }
   
-  exportCurrentReport() {
+  exportCurrentReport(format: 'json' | 'csv' = 'json') {
     if (!this.generatedReport || !this.selectedReportType) {
+      return;
+    }
+
+    if (format === 'csv') {
+      const csv = this.buildCsvExport();
+      if (!csv) {
+        this.snackBar.open('CSV export is not available for this report', 'Close', { duration: 3000 });
+        return;
+      }
+      this.downloadFile(csv, 'text/csv;charset=utf-8;', `${this.selectedReportType}-report-${this.formatDate(new Date())}.csv`);
+      this.snackBar.open('Report exported as CSV', 'Close', { duration: 3000 });
       return;
     }
 
@@ -414,19 +578,44 @@ export class ReportsDashboardComponent implements OnInit, OnDestroy {
       params: this.getExportParams(),
       data: this.generatedReport
     };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], {
-      type: 'application/json'
-    });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${this.selectedReportType}-report-${this.formatDate(new Date())}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
-
+    this.downloadFile(
+      JSON.stringify(payload, null, 2),
+      'application/json',
+      `${this.selectedReportType}-report-${this.formatDate(new Date())}.json`
+    );
     this.snackBar.open('Report exported as JSON', 'Close', { duration: 3000 });
+  }
+
+  applyPreset(preset: 'thisMonth' | 'lastMonth' | 'last7Days') {
+    const today = new Date();
+
+    if (this.selectedReportType === 'audit') {
+      if (preset === 'thisMonth') {
+        this.auditStartDate = new Date(today.getFullYear(), today.getMonth(), 1);
+        this.auditEndDate = today;
+      } else if (preset === 'lastMonth') {
+        this.auditStartDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+        this.auditEndDate = new Date(today.getFullYear(), today.getMonth(), 0);
+      } else {
+        this.auditStartDate = new Date(today);
+        this.auditStartDate.setDate(today.getDate() - 6);
+        this.auditEndDate = today;
+      }
+      return;
+    }
+
+    if (preset === 'thisMonth') {
+      this.selectedDate = new Date(today.getFullYear(), today.getMonth(), 1);
+      return;
+    }
+
+    if (preset === 'lastMonth') {
+      this.selectedDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+      return;
+    }
+
+    this.selectedDate = new Date(today);
+    this.selectedDate.setDate(today.getDate() - 6);
   }
   
   resetForm() {
@@ -501,5 +690,171 @@ export class ReportsDashboardComponent implements OnInit, OnDestroy {
     const months = ['January', 'February', 'March', 'April', 'May', 'June',
                    'July', 'August', 'September', 'October', 'November', 'December'];
     return `${months[this.selectedDate.getMonth()]} ${this.selectedDate.getFullYear()}`;
+  }
+
+  getHeadlineMetrics(): Array<{ label: string; value: string }> {
+    if (!this.generatedReport) return [];
+
+    switch (this.selectedReportType) {
+      case 'daily':
+        return [
+          { label: 'Total Orders', value: this.formatNumber(this.generatedReport.totalOrders) },
+          { label: 'Unique Employees', value: this.formatNumber(this.generatedReport.uniqueEmployees) },
+          { label: 'Daily Revenue', value: this.formatCurrency(this.generatedReport.dailyRevenue) },
+          { label: 'Avg Order Value', value: this.formatCurrency(this.generatedReport.avgOrderValue) }
+        ];
+      case 'monthly':
+        return [
+          { label: 'Monthly Revenue', value: this.formatCurrency(this.generatedReport.monthlyRevenue) },
+          { label: 'Total Budget', value: this.formatCurrency(this.generatedReport.totalBudget) },
+          { label: 'Total Spent', value: this.formatCurrency(this.generatedReport.totalSpent) },
+          { label: 'Utilization', value: `${this.formatNumber(this.generatedReport.budgetUtilizationRate)}%` }
+        ];
+      case 'employee':
+        return [
+          { label: 'Top Performers', value: this.formatNumber(this.generatedReport.topPerformers?.length) },
+          { label: 'Budget Overruns', value: this.formatNumber(this.generatedReport.budgetOverruns?.length) },
+          { label: 'Departments', value: this.formatNumber(this.generatedReport.departmentStats?.length) },
+          { label: 'Employees', value: this.formatNumber(this.generatedReport.employeeStats?.length) }
+        ];
+      case 'meal':
+        return [
+          { label: 'Tracked Meals', value: this.formatNumber(this.generatedReport.mealPerformance?.length) },
+          { label: 'Top Meals', value: this.formatNumber(this.generatedReport.topMeals?.length) },
+          { label: 'Meal Types', value: this.formatNumber(this.generatedReport.mealTypeBreakdown?.length) },
+          { label: 'Availability Buckets', value: this.formatNumber(this.generatedReport.availabilityAnalysis?.length) }
+        ];
+      case 'audit':
+        return [
+          { label: 'Total Actions', value: this.formatNumber(this.generatedReport.totalActions) },
+          { label: 'Action Types', value: this.formatNumber(this.generatedReport.actionBreakdown?.length) },
+          { label: 'Active Users', value: this.formatNumber(this.generatedReport.userActivity?.length) },
+          { label: 'Alerts', value: this.formatNumber(this.generatedReport.suspiciousActivity?.length) }
+        ];
+      default:
+        return [];
+    }
+  }
+
+  private formatNumber(value: unknown): string {
+    const numeric = Number(value ?? 0);
+    return Number.isFinite(numeric) ? numeric.toLocaleString() : '0';
+  }
+
+  private formatCurrency(value: unknown): string {
+    const numeric = Number(value ?? 0);
+    if (!Number.isFinite(numeric)) return '$0.00';
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(numeric);
+  }
+
+  private buildCsvExport(): string | null {
+    const data = this.generatedReport;
+    if (!data) return null;
+
+    switch (this.selectedReportType) {
+      case 'daily':
+        const dailyRows = Array.isArray(data.hourlyBreakdown) ? data.hourlyBreakdown : [];
+        return this.toCsv(
+          ['hour', 'orderCount', 'revenue'],
+          dailyRows.map((row: unknown) => [
+            this.getField(row, 'hour'),
+            this.getField(row, 'orderCount'),
+            this.getField(row, 'revenue')
+          ])
+        );
+      case 'monthly':
+        const monthlyRows = Array.isArray(data.employeeBudgetAnalysis) ? data.employeeBudgetAnalysis : [];
+        return this.toCsv(
+          ['employeeName', 'department', 'monthlyBudget', 'currentSpent', 'remainingBudget', 'utilizationPercentage', 'status'],
+          monthlyRows.map((row: unknown) => [
+            this.getField(row, 'employeeName'),
+            this.getField(row, 'department'),
+            this.getField(row, 'monthlyBudget'),
+            this.getField(row, 'currentSpent'),
+            this.getField(row, 'remainingBudget'),
+            this.getField(row, 'utilizationPercentage'),
+            this.getField(row, 'status')
+          ])
+        );
+      case 'employee':
+        const employeeRows = Array.isArray(data.employeeStats) ? data.employeeStats : [];
+        return this.toCsv(
+          ['employeeName', 'department', 'totalOrders', 'avgOrderValue', 'monthlyBudget', 'currentSpent', 'utilizationPercentage', 'lastOrderDate'],
+          employeeRows.map((row: unknown) => [
+            this.getField(row, 'employeeName'),
+            this.getField(row, 'department'),
+            this.getField(row, 'totalOrders'),
+            this.getField(row, 'avgOrderValue'),
+            this.getField(row, 'monthlyBudget'),
+            this.getField(row, 'currentSpent'),
+            this.getField(row, 'utilizationPercentage'),
+            this.getField(row, 'lastOrderDate')
+          ])
+        );
+      case 'meal':
+        const mealRows = Array.isArray(data.mealPerformance) ? data.mealPerformance : [];
+        return this.toCsv(
+          ['mealName', 'mealType', 'timesOrdered', 'totalQuantity', 'totalRevenue', 'avgOrderValue', 'currentlyAvailable'],
+          mealRows.map((row: unknown) => [
+            this.getField(row, 'mealName'),
+            this.getField(row, 'mealType'),
+            this.getField(row, 'timesOrdered'),
+            this.getField(row, 'totalQuantity'),
+            this.getField(row, 'totalRevenue'),
+            this.getField(row, 'avgOrderValue'),
+            this.getField(row, 'currentlyAvailable')
+          ])
+        );
+      case 'audit':
+        const auditRows = Array.isArray(data.suspiciousActivity) ? data.suspiciousActivity : [];
+        return this.toCsv(
+          ['timestamp', 'userId', 'action', 'entityType', 'reason', 'ipAddress'],
+          auditRows.map((row: unknown) => [
+            this.getField(row, 'timestamp'),
+            this.getField(row, 'userId'),
+            this.getField(row, 'action'),
+            this.getField(row, 'entityType'),
+            this.getField(row, 'reason'),
+            this.getField(row, 'ipAddress')
+          ])
+        );
+      default:
+        return null;
+    }
+  }
+
+  private toCsv(headers: string[], rows: unknown[][]): string {
+    const csvRows = [headers.map((h) => this.csvEscape(h)).join(',')];
+    rows.forEach((row) => {
+      csvRows.push(row.map((value) => this.csvEscape(value)).join(','));
+    });
+    return csvRows.join('\n');
+  }
+
+  private csvEscape(value: unknown): string {
+    const text = String(value ?? '');
+    if (/[",\n]/.test(text)) {
+      return `"${text.replace(/"/g, '""')}"`;
+    }
+    return text;
+  }
+
+  private getField(row: unknown, key: string): unknown {
+    if (row && typeof row === 'object') {
+      return (row as Record<string, unknown>)[key];
+    }
+    return '';
+  }
+
+  private downloadFile(content: string, mimeType: string, fileName: string): void {
+    const blob = new Blob([content], { type: mimeType });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
   }
 }

@@ -1,4 +1,4 @@
-import { AfterViewInit, Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -9,7 +9,7 @@ import { MatGridListModule } from '@angular/material/grid-list';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { DashboardService } from '../../../../core/services/api/dashboard-api.service';
 import { DashboardStats } from '../../../../core/models/api.models';
-import { withLoading } from '../../../../shared/services/loading.operator';
+import { catchError, map, Observable, of, shareReplay, startWith } from 'rxjs';
 
 @Component({
   selector: 'app-dashboard',
@@ -26,14 +26,15 @@ import { withLoading } from '../../../../shared/services/loading.operator';
   template: `
     <div class="dashboard-container">
       <h1 class="dashboard-title">Dashboard</h1>
-      
-      <!-- Stats Cards -->
-      <div class="stats-grid">
+
+      <ng-container *ngIf="stats$ | async as stats; else loadingState">
+        <!-- Stats Cards -->
+        <div class="stats-grid">
         <mat-card class="stat-card">
           <mat-card-content class="stat-content">
             <mat-icon class="stat-icon">restaurant</mat-icon>
             <div class="stat-info">
-              <h3>{{ stats?.totalOrders || 0 }}</h3>
+              <h3>{{ stats.totalOrders }}</h3>
               <p>Total Orders</p>
             </div>
           </mat-card-content>
@@ -43,7 +44,7 @@ import { withLoading } from '../../../../shared/services/loading.operator';
           <mat-card-content class="stat-content">
             <mat-icon class="stat-icon">restaurant_menu</mat-icon>
             <div class="stat-info">
-              <h3>{{ stats?.totalMeals || 0 }}</h3>
+              <h3>{{ stats.totalMeals }}</h3>
               <p>Total Meals</p>
             </div>
           </mat-card-content>
@@ -53,7 +54,7 @@ import { withLoading } from '../../../../shared/services/loading.operator';
           <mat-card-content class="stat-content">
             <mat-icon class="stat-icon">people</mat-icon>
             <div class="stat-info">
-              <h3>{{ stats?.totalEmployees || 0 }}</h3>
+              <h3>{{ stats.totalEmployees }}</h3>
               <p>Total Employees</p>
             </div>
           </mat-card-content>
@@ -63,7 +64,7 @@ import { withLoading } from '../../../../shared/services/loading.operator';
           <mat-card-content class="stat-content">
             <mat-icon class="stat-icon">today</mat-icon>
             <div class="stat-info">
-              <h3>{{ stats?.todayOrders || 0 }}</h3>
+              <h3>{{ stats.todayOrders }}</h3>
               <p>Today's Orders</p>
             </div>
           </mat-card-content>
@@ -73,26 +74,23 @@ import { withLoading } from '../../../../shared/services/loading.operator';
           <mat-card-content class="stat-content">
             <mat-icon class="stat-icon">attach_money</mat-icon>
             <div class="stat-info">
-              <h3>{{ stats?.monthlyRevenue | currency:'USD' }}</h3>
+              <h3>{{ stats.monthlyRevenue | currency:'USD' }}</h3>
               <p>Monthly Revenue</p>
             </div>
           </mat-card-content>
         </mat-card>
-      </div>
+        </div>
 
-      <!-- Top Meals and Recent Orders -->
-      <div class="content-grid">
+        <!-- Top Meals and Recent Orders -->
+        <div class="content-grid">
         <!-- Top Meals -->
         <mat-card class="content-card">
           <mat-card-header>
             <mat-card-title>Top Meals</mat-card-title>
           </mat-card-header>
           <mat-card-content>
-            <div *ngIf="isLoading" class="loading-container">
-              <mat-spinner diameter="40"></mat-spinner>
-            </div>
-            <div *ngIf="!isLoading" class="meals-list">
-              <div *ngFor="let meal of stats?.topMeals; trackBy: trackByMealId" class="meal-item">
+            <div class="meals-list">
+              <div *ngFor="let meal of stats.topMeals; trackBy: trackByMealId" class="meal-item">
                 <div class="meal-info">
                   <h4>{{ meal.mealName }}</h4>
                   <p>{{ meal.orderCount }} orders</p>
@@ -109,11 +107,8 @@ import { withLoading } from '../../../../shared/services/loading.operator';
             <mat-card-title>Recent Orders</mat-card-title>
           </mat-card-header>
           <mat-card-content>
-            <div *ngIf="isLoading" class="loading-container">
-              <mat-spinner diameter="40"></mat-spinner>
-            </div>
-            <div *ngIf="!isLoading" class="orders-list">
-              <div *ngFor="let order of stats?.recentOrders; trackBy: trackByOrderId" class="order-item">
+            <div class="orders-list">
+              <div *ngFor="let order of stats.recentOrders; trackBy: trackByOrderId" class="order-item">
                 <div class="order-header">
                   <span class="order-id">#{{ order.id }}</span>
                   <mat-chip [color]="getStatusColor(order.status)" class="status-chip">
@@ -129,7 +124,14 @@ import { withLoading } from '../../../../shared/services/loading.operator';
             </div>
           </mat-card-content>
         </mat-card>
-      </div>
+        </div>
+      </ng-container>
+
+      <ng-template #loadingState>
+        <div class="loading-container">
+          <mat-spinner diameter="40"></mat-spinner>
+        </div>
+      </ng-template>
     </div>
   `,
   styles: [`
@@ -295,36 +297,37 @@ import { withLoading } from '../../../../shared/services/loading.operator';
     }
   `]
 })
-export class DashboardComponent implements AfterViewInit {
-  stats: DashboardStats | null = null;
-  isLoading = true;
+export class DashboardComponent implements OnInit {
+  stats$!: Observable<DashboardStats | null>;
+  private readonly emptyStats: DashboardStats = {
+    totalOrders: 0,
+    totalMeals: 0,
+    totalEmployees: 0,
+    todayOrders: 0,
+    monthlyRevenue: 0,
+    topMeals: [],
+    recentOrders: []
+  };
 
   constructor(
     private dashboardService: DashboardService,
     private snackBar: MatSnackBar
   ) {}
 
-  ngAfterViewInit(): void {
-    setTimeout(() => this.loadDashboardStats(), 0);
-  }
-
-  private loadDashboardStats(): void {
-    this.dashboardService.getDashboardStats().pipe(
-      withLoading((loading) => {
-        this.isLoading = loading;
-      })
-    ).subscribe({
-      next: (response) => {
-        this.stats = response.data;
-      },
-      error: () => {
+  ngOnInit(): void {
+    this.stats$ = this.dashboardService.getDashboardStats().pipe(
+      map((response) => response.data ?? this.emptyStats),
+      catchError(() => {
         this.snackBar.open('Failed to load dashboard data', 'Close', {
           duration: 3000,
           horizontalPosition: 'end',
           verticalPosition: 'top'
         });
-      }
-    });
+        return of(this.emptyStats);
+      }),
+      startWith(null),
+      shareReplay(1)
+    );
   }
 
   getStatusColor(status: string): string {

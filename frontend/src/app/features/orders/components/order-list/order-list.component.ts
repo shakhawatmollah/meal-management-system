@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, NgZone, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule } from '@angular/material/paginator';
@@ -11,7 +11,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { OrderService } from '../../../../core/services/api/order-api.service';
 import { MealOrder, SearchParams } from '../../../../core/models/api.models';
-import { withLoading } from '../../../../shared/services/loading.operator';
+import { finalize, retry } from 'rxjs';
 
 @Component({
   selector: 'app-order-list',
@@ -42,7 +42,7 @@ import { withLoading } from '../../../../shared/services/loading.operator';
             <mat-spinner diameter="40"></mat-spinner>
           </div>
           
-          <div class="table-container" *ngIf="!isLoading">
+          <div class="table-container">
             <table mat-table [dataSource]="orders" matSort>
               <ng-container matColumnDef="id">
                 <th mat-header-cell *matHeaderCellDef mat-sort-header>ID</th>
@@ -132,7 +132,7 @@ import { withLoading } from '../../../../shared/services/loading.operator';
     }
   `]
 })
-export class OrderListComponent {
+export class OrderListComponent implements OnInit {
   orders: MealOrder[] = [];
   totalElements = 0;
   pageSize = 10;
@@ -143,31 +143,48 @@ export class OrderListComponent {
   constructor(
     private orderService: OrderService,
     private router: Router,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private ngZone: NgZone
   ) {}
 
   ngOnInit(): void {
-    this.loadOrders();
+    setTimeout(() => this.loadOrders(this.getDefaultSearchParams()), 0);
   }
 
   loadOrders(params?: SearchParams): void {
-    this.orderService.getOrders(params).pipe(
-      withLoading((loading) => {
-        this.isLoading = loading;
+    const effectiveParams = params ?? this.getDefaultSearchParams();
+    this.setLoading(true);
+    this.orderService.getOrders(effectiveParams).pipe(
+      retry({ count: 1 }),
+      finalize(() => {
+        this.setLoading(false);
       })
     ).subscribe({
       next: (response) => {
-        this.orders = response.data ?? [];
-        this.totalElements = response.pagination?.totalElements ?? this.orders.length;
+        this.ngZone.run(() => {
+          const pageData = this.unwrapPageData<MealOrder>(response.data);
+          this.orders = pageData.items;
+          this.totalElements = response.pagination?.totalElements ?? pageData.totalElements;
+        });
       },
       error: () => {
-        this.snackBar.open('Failed to load orders', 'Close', {
-          duration: 3000,
-          horizontalPosition: 'end',
-          verticalPosition: 'top'
+        this.ngZone.run(() => {
+          this.snackBar.open('Failed to load orders', 'Close', {
+            duration: 3000,
+            horizontalPosition: 'end',
+            verticalPosition: 'top'
+          });
         });
       }
     });
+  }
+
+  private setLoading(value: boolean): void {
+    setTimeout(() => {
+      this.ngZone.run(() => {
+        this.isLoading = value;
+      });
+    }, 0);
   }
 
   createOrder(): void {
@@ -208,5 +225,30 @@ export class OrderListComponent {
       direction: 'DESC'
     };
     this.loadOrders(params);
+  }
+
+  private unwrapPageData<T>(data: unknown): { items: T[]; totalElements: number } {
+    if (Array.isArray(data)) {
+      return { items: data, totalElements: data.length };
+    }
+
+    if (data && typeof data === 'object' && Array.isArray((data as { content?: T[] }).content)) {
+      const page = data as { content: T[]; totalElements?: number };
+      return {
+        items: page.content,
+        totalElements: page.totalElements ?? page.content.length
+      };
+    }
+
+    return { items: [], totalElements: 0 };
+  }
+
+  private getDefaultSearchParams(): SearchParams {
+    return {
+      page: 0,
+      size: this.pageSize,
+      sort: 'createdAt',
+      direction: 'DESC'
+    };
   }
 }

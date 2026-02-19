@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, tap } from 'rxjs';
+import { BehaviorSubject, Observable, distinctUntilChanged, map, tap } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { jwtDecode } from 'jwt-decode';
@@ -9,15 +9,19 @@ import {
   LoginRequest,
   LoginResponse,
   RegisterRequest,
-  RefreshTokenRequest,
-  RefreshTokenResponse,
-  LogoutRequest
+  RefreshTokenResponse
 } from '../models/api.models';
 
 interface DecodedTokenPayload {
   exp: number;
   sub?: string;
   roles?: string;
+  id?: number | string;
+  userId?: number | string;
+  employeeId?: number | string;
+  user_id?: number | string;
+  uid?: number | string;
+  [key: string]: unknown;
 }
 
 @Injectable({
@@ -26,6 +30,7 @@ interface DecodedTokenPayload {
 export class AuthService {
   private readonly API_URL = `${environment.apiUrl}/auth`;
   private readonly TOKEN_KEY = 'auth_tokens';
+  private readonly USER_KEY = 'auth_user';
   
   private isAuthenticatedSubject = new BehaviorSubject<boolean>(false);
   private currentUserSubject = new BehaviorSubject<any>(null);
@@ -33,8 +38,8 @@ export class AuthService {
   isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
   currentUser$ = this.currentUserSubject.asObservable();
   isAdmin$ = this.currentUserSubject.pipe(
-    tap(user => console.log('Current user:', user)),
-    // tap(user => console.log('Is admin:', user?.roles?.includes('ROLE_ADMIN')))
+    map(user => Array.isArray(user?.roles) && user.roles.includes('ROLE_ADMIN')),
+    distinctUntilChanged()
   );
 
   constructor(
@@ -48,6 +53,7 @@ export class AuthService {
     const tokens = this.getStoredTokens();
     if (tokens && this.isTokenValid(tokens.accessToken)) {
       this.setAuthState(tokens);
+      this.restoreStoredUser();
     } else {
       this.clearAuthState();
     }
@@ -129,6 +135,7 @@ export class AuthService {
 
   private clearAuthState(): void {
     localStorage.removeItem(this.TOKEN_KEY);
+    localStorage.removeItem(this.USER_KEY);
     this.isAuthenticatedSubject.next(false);
     this.currentUserSubject.next(null);
     this.router.navigate(['/login']);
@@ -155,9 +162,10 @@ export class AuthService {
       const roles = decoded.roles
         ? decoded.roles.split(',').map(role => role.trim()).filter(Boolean)
         : [];
+      const decodedId = this.extractIdFromDecodedToken(decoded);
 
       this.setCurrentUser({
-        id: null,
+        id: decodedId,
         email: decoded.sub || '',
         name: '',
         roles
@@ -169,6 +177,27 @@ export class AuthService {
 
   private setCurrentUser(user: { id: number | null; email: string; name: string; roles: string[] }): void {
     this.currentUserSubject.next(user);
+    localStorage.setItem(this.USER_KEY, JSON.stringify(user));
+  }
+
+  private restoreStoredUser(): void {
+    const stored = localStorage.getItem(this.USER_KEY);
+    if (!stored) return;
+
+    try {
+      const user = JSON.parse(stored) as { id: number | null; email: string; name: string; roles: string[] };
+      const current = this.currentUserSubject.value;
+
+      // Keep token-derived roles/email fresh, but restore missing id/name from persisted user.
+      this.currentUserSubject.next({
+        id: this.normalizeId(current?.id) ?? this.normalizeId(user.id) ?? null,
+        email: current?.email || user.email || '',
+        name: current?.name || user.name || '',
+        roles: Array.isArray(current?.roles) && current.roles.length > 0 ? current.roles : (user.roles ?? [])
+      });
+    } catch {
+      localStorage.removeItem(this.USER_KEY);
+    }
   }
 
   hasRole(role: string): boolean {
@@ -190,5 +219,51 @@ export class AuthService {
 
   getCurrentUser(): { id: number | null; email: string; name: string; roles: string[] } | null {
     return this.currentUserSubject.value;
+  }
+
+  resolveCurrentUserId(): number | null {
+    const fromCurrent = this.normalizeId(this.currentUserSubject.value?.id);
+    if (fromCurrent !== null) return fromCurrent;
+
+    const stored = localStorage.getItem(this.USER_KEY);
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored) as { id?: number | string };
+        const fromStored = this.normalizeId(parsed?.id);
+        if (fromStored !== null) return fromStored;
+      } catch {
+        // ignore malformed storage
+      }
+    }
+
+    const accessToken = this.getAccessToken();
+    if (accessToken) {
+      try {
+        const decoded: DecodedTokenPayload = jwtDecode(accessToken);
+        const fromToken = this.extractIdFromDecodedToken(decoded);
+        if (fromToken !== null) return fromToken;
+      } catch {
+        // ignore invalid token payload
+      }
+    }
+
+    return null;
+  }
+
+  private extractIdFromDecodedToken(decoded: DecodedTokenPayload): number | null {
+    const candidates = [decoded.id, decoded.userId, decoded.employeeId, decoded.user_id, decoded.uid];
+    for (const candidate of candidates) {
+      const normalized = this.normalizeId(candidate);
+      if (normalized !== null) {
+        return normalized;
+      }
+    }
+    return null;
+  }
+
+  private normalizeId(value: unknown): number | null {
+    if (value === null || value === undefined) return null;
+    const numeric = Number(value);
+    return Number.isFinite(numeric) ? numeric : null;
   }
 }

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -8,6 +8,7 @@ import { MatChip } from '@angular/material/chips';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router, ActivatedRoute } from '@angular/router';
 import { MealService } from '../../../../core/services/api/meal-api.service';
+import { AuthService } from '../../../../core/services/auth.service';
 import { Meal } from '../../../../core/models/api.models';
 
 @Component({
@@ -217,27 +218,23 @@ import { Meal } from '../../../../core/models/api.models';
     }
   `]
 })
-export class MealDetailComponent {
+export class MealDetailComponent implements OnInit {
   meal: Meal | null = null;
   isLoading = false;
   isAdmin = false;
 
   constructor(
     private mealService: MealService,
+    private authService: AuthService,
     private router: Router,
     private route: ActivatedRoute,
     private snackBar: MatSnackBar
-  ) {}
+  ) {
+    this.isAdmin = this.authService.isAdmin();
+  }
 
   ngOnInit(): void {
     this.loadMeal();
-    this.checkAdminRole();
-  }
-
-  private checkAdminRole(): void {
-    // This would come from your auth service
-    // For now, we'll assume admin role check
-    this.isAdmin = true; // Change this based on actual auth logic
   }
 
   private loadMeal(): void {
@@ -249,7 +246,7 @@ export class MealDetailComponent {
           this.meal = response.data;
           this.isLoading = false;
         },
-        error: (error) => {
+        error: () => {
           this.isLoading = false;
           this.snackBar.open('Failed to load meal details', 'Close', {
             duration: 3000,

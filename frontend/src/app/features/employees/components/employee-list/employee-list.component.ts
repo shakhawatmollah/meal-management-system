@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, NgZone, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatSortModule } from '@angular/material/sort';
@@ -14,15 +15,16 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { EmployeeService } from '../../../../core/services/api/employee-api.service';
-import { Employee, EmployeeRequest, SearchParams } from '../../../../core/models/api.models';
+import { Employee, SearchParams } from '../../../../core/models/api.models';
 import { MatChip } from "@angular/material/chips";
-import { withLoading } from '../../../../shared/services/loading.operator';
+import { finalize, retry } from 'rxjs';
 
 @Component({
   selector: 'app-employee-list',
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     MatTableModule,
     MatPaginatorModule,
     MatSortModule,
@@ -45,14 +47,15 @@ import { withLoading } from '../../../../shared/services/loading.operator';
             <mat-form-field appearance="outline" class="search-field">
               <mat-label>Search</mat-label>
               <input matInput 
-                     formControlName="search" 
+                     [(ngModel)]="filters.search"
+                     name="search"
                      placeholder="Search employees..."
                      (keyup)="applyFilter()">
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="filter-field">
               <mat-label>Department</mat-label>
-              <mat-select formControlName="department" (selectionChange)="applyFilter()">
+              <mat-select [(ngModel)]="filters.department" name="department" (selectionChange)="applyFilter()">
                 <mat-option value="">All Departments</mat-option>
                 <mat-option value="IT">IT</mat-option>
                 <mat-option value="HR">HR</mat-option>
@@ -64,7 +67,7 @@ import { withLoading } from '../../../../shared/services/loading.operator';
 
             <mat-form-field appearance="outline" class="filter-field">
               <mat-label>Status</mat-label>
-              <mat-select formControlName="status" (selectionChange)="applyFilter()">
+              <mat-select [(ngModel)]="filters.status" name="status" (selectionChange)="applyFilter()">
                 <mat-option value="">All Status</mat-option>
                 <mat-option value="ACTIVE">Active</mat-option>
                 <mat-option value="INACTIVE">Inactive</mat-option>
@@ -88,7 +91,7 @@ import { withLoading } from '../../../../shared/services/loading.operator';
             <mat-spinner diameter="40"></mat-spinner>
           </div>
           
-          <div class="table-container" *ngIf="!isLoading">
+          <div class="table-container">
             <table mat-table 
                    [dataSource]="employees" 
                    matSort 
@@ -240,49 +243,61 @@ import { withLoading } from '../../../../shared/services/loading.operator';
     }
   `]
 })
-export class EmployeeListComponent {
+export class EmployeeListComponent implements OnInit {
   employees: Employee[] = [];
   totalElements = 0;
   pageSize = 10;
-  isLoading = false;
+  isLoading = true;
+  filters = {
+    search: '',
+    department: '',
+    status: ''
+  };
 
   displayedColumns: string[] = ['id', 'name', 'email', 'department', 'status', 'monthlyBudget', 'currentMonthSpent', 'actions'];
 
   constructor(
     private employeeService: EmployeeService,
     private router: Router,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private ngZone: NgZone
   ) {}
 
   ngOnInit(): void {
-    this.loadEmployees();
+    this.loadEmployees(this.getDefaultSearchParams());
   }
 
   loadEmployees(params?: SearchParams): void {
-    this.employeeService.getEmployees(params).pipe(
-      withLoading((loading) => {
-        this.isLoading = loading;
+    const effectiveParams = params ?? this.getDefaultSearchParams();
+    this.isLoading = true;
+    this.employeeService.getEmployees(effectiveParams).pipe(
+      retry({ count: 1 }),
+      finalize(() => {
+        this.ngZone.run(() => {
+          this.isLoading = false;
+        });
       })
     ).subscribe({
       next: (response) => {
-        this.employees = response.data ?? [];
-        this.totalElements = response.pagination?.totalElements ?? this.employees.length;
+        this.ngZone.run(() => {
+          const pageData = this.unwrapPageData<Employee>(response.data);
+          this.employees = pageData.items;
+          this.totalElements = response.pagination?.totalElements ?? pageData.totalElements;
+        });
       },
       error: () => {
-        this.snackBar.open('Failed to load employees', 'Close', {
-          duration: 3000,
-          horizontalPosition: 'end',
-          verticalPosition: 'top'
+        this.ngZone.run(() => {
+          this.snackBar.open('Failed to load employees', 'Close', {
+            duration: 3000,
+            horizontalPosition: 'end',
+            verticalPosition: 'top'
+          });
         });
       }
     });
   }
 
   applyFilter(): void {
-    const searchValue = (document.querySelector('input[formcontrolname="search"]') as HTMLInputElement)?.value || '';
-    const departmentValue = (document.querySelector('mat-select[formcontrolname="department"]') as any)?.value || '';
-    const statusValue = (document.querySelector('mat-select[formcontrolname="status"]') as any)?.value || '';
-
     const params: SearchParams = {
       page: 0,
       size: this.pageSize,
@@ -290,9 +305,9 @@ export class EmployeeListComponent {
       direction: 'ASC'
     };
 
-    if (searchValue) params.search = searchValue;
-    if (departmentValue) params.department = departmentValue;
-    if (statusValue) params.status = statusValue;
+    if (this.filters.search) params.search = this.filters.search;
+    if (this.filters.department) params.department = this.filters.department;
+    if (this.filters.status) params.status = this.filters.status;
 
     this.loadEmployees(params);
   }
@@ -360,5 +375,30 @@ export class EmployeeListComponent {
       case 'Operations': return 'accent';
       default: return '';
     }
+  }
+
+  private unwrapPageData<T>(data: unknown): { items: T[]; totalElements: number } {
+    if (Array.isArray(data)) {
+      return { items: data, totalElements: data.length };
+    }
+
+    if (data && typeof data === 'object' && Array.isArray((data as { content?: T[] }).content)) {
+      const page = data as { content: T[]; totalElements?: number };
+      return {
+        items: page.content,
+        totalElements: page.totalElements ?? page.content.length
+      };
+    }
+
+    return { items: [], totalElements: 0 };
+  }
+
+  private getDefaultSearchParams(): SearchParams {
+    return {
+      page: 0,
+      size: this.pageSize,
+      sort: 'name',
+      direction: 'ASC'
+    };
   }
 }

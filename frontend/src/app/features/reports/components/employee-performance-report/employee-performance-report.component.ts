@@ -6,6 +6,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-employee-performance-report',
@@ -16,7 +17,8 @@ import { CommonModule } from '@angular/common';
     MatIconModule,
     MatProgressBarModule,
     MatFormFieldModule,
-    MatInputModule
+    MatInputModule,
+    FormsModule
   ],
   template: `
     <div class="employee-performance-report">

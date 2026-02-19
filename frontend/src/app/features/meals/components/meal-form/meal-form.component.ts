@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -13,7 +13,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MealService } from '../../../../core/services/api/meal-api.service';
-import { Meal, MealRequest } from '../../../../core/models/api.models';
+import { MealRequest } from '../../../../core/models/api.models';
 import { withLoading } from '../../../../shared/services/loading.operator';
 
 @Component({
@@ -199,7 +199,7 @@ import { withLoading } from '../../../../shared/services/loading.operator';
     }
   `]
 })
-export class MealFormComponent {
+export class MealFormComponent implements OnInit {
   mealForm: FormGroup;
   isLoading = false;
   isEditMode = false;

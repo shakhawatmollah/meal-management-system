@@ -44,9 +44,9 @@ A complete, modern Angular frontend for Meal Management System with comprehensiv
 ## 🛠️ Technical Implementation
 
 ### Frontend Stack
-- **Angular 17** with standalone components and functional interceptors
-- **Angular Material 17** for modern UI components
-- **TypeScript 5.4** for type safety
+- **Angular 21** with standalone components and functional interceptors
+- **Angular Material 21** for modern UI components
+- **TypeScript 5.9** for type safety
 - **RxJS 7.8** for reactive programming
 - **SCSS** for styling with Material Design theming
 
@@ -142,7 +142,7 @@ frontend/
 
 ### Prerequisites
 - **Node.js** 18+ and **npm** 9+
-- **Angular CLI** 17+
+- **Angular CLI** 21+
 - **Backend API** running on configured port
 
 ### Installation & Development
@@ -174,10 +174,17 @@ ng build --configuration production
 
 ### Testing
 ```bash
-# Run unit tests
+# Run unit tests (watch mode)
 npm run test
-# or
-ng test
+
+# Run deterministic CI-style headless tests
+npm run test:ci
+
+# Run local headless tests with lighter output
+npm run test:local
+
+# Run migration safety checks (lint + development build)
+npm run verify:migration
 
 # Run tests with coverage
 ng test --code-coverage
@@ -185,6 +192,10 @@ ng test --code-coverage
 # Run end-to-end tests
 npm run e2e
 ```
+
+Note:
+- If you see `Error: spawn EPERM` while launching headless browser on Windows, this is an OS/browser process permission issue. Run the terminal with sufficient permissions or allow browser child-process launch in your security policy.
+- If you see `EPERM: ... unlink .../dist/...` during production build, close processes locking files in `frontend/dist` and re-run `npm run build`.
 
 ### Linting
 ```bash
@@ -227,7 +238,7 @@ The frontend seamlessly integrates with your Spring Boot backend:
 ## 🎨 UI/UX Features
 
 ### Material Design Implementation
-- **Modern Components**: Using Angular Material 17
+- **Modern Components**: Using Angular Material 21
 - **Responsive Layout**: Works on all device sizes
 - **Dark Mode Support**: Easy on the eyes (configurable)
 - **Form Validation**: Real-time feedback with error messages
@@ -312,7 +323,7 @@ ng build --configuration production
 - **Type Safety**: Comprehensive TypeScript usage
 
 ### Best Practices
-- **Standalone Components**: Modern Angular 17 patterns
+- **Standalone Components**: Modern Angular 21 patterns
 - **Functional Interceptors**: New HTTP interceptor pattern
 - **Dependency Injection**: Proper service management
 - **Error Boundaries**: Comprehensive error handling

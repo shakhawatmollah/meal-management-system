@@ -4,22 +4,32 @@ import { environment } from '../../../environments/environment';
 
 @Injectable()
 export class GlobalErrorHandler implements ErrorHandler {
+  private lastErrorKey = '';
+  private lastErrorAt = 0;
   
   constructor(private snackBar: MatSnackBar) {}
 
   handleError(error: any): void {
-    console.error('Global Error Handler:', error);
+    const resolvedError = error?.rejection || error?.originalError || error;
+    const errorText = this.extractErrorText(resolvedError);
+
+    // Prevent repeated floods from the same error in a short window.
+    if (this.shouldSuppress(errorText)) {
+      return;
+    }
+
+    console.error('Global Error Handler:', resolvedError);
     
     let errorMessage = 'An unexpected error occurred';
     
-    if (error?.error instanceof ErrorEvent) {
+    if (resolvedError?.error instanceof ErrorEvent) {
       // Client-side error
-      errorMessage = error.error.message;
-    } else if (error?.status) {
+      errorMessage = resolvedError.error.message;
+    } else if (resolvedError?.status) {
       // HTTP error
-      switch (error.status) {
+      switch (resolvedError.status) {
         case 400:
-          errorMessage = error.error?.message || 'Bad request';
+          errorMessage = resolvedError.error?.message || 'Bad request';
           break;
         case 401:
           errorMessage = 'Unauthorized - Please login again';
@@ -31,17 +41,25 @@ export class GlobalErrorHandler implements ErrorHandler {
           errorMessage = 'Resource not found';
           break;
         case 409:
-          errorMessage = error.error?.message || 'Conflict occurred';
+          errorMessage = resolvedError.error?.message || 'Conflict occurred';
           break;
         case 500:
           errorMessage = 'Internal server error';
           break;
         default:
-          errorMessage = error.error?.message || `Server error: ${error.status}`;
+          errorMessage = resolvedError.error?.message || `Server error: ${resolvedError.status}`;
       }
-    } else if (error?.message) {
+    } else if (resolvedError?.message) {
       // JavaScript error
-      errorMessage = error.message;
+      errorMessage = resolvedError.message;
+    }
+
+    // NG0100 is a developer-time expression check error. Avoid snackbar loops.
+    if (errorText.includes('ExpressionChangedAfterItHasBeenCheckedError')) {
+      if (environment.enableDebug) {
+        console.warn('Suppressed NG0100 snackbar:', errorText);
+      }
+      return;
     }
 
     // Show user-friendly error message
@@ -54,7 +72,24 @@ export class GlobalErrorHandler implements ErrorHandler {
 
     // Log detailed error in development
     if (environment.enableDebug) {
-      console.error('Detailed error:', error);
+      console.error('Detailed error:', resolvedError);
     }
+  }
+
+  private extractErrorText(error: any): string {
+    if (!error) return '';
+    if (typeof error === 'string') return error;
+    return `${error?.name || ''}:${error?.message || ''}:${error?.status || ''}`;
+  }
+
+  private shouldSuppress(errorKey: string): boolean {
+    const now = Date.now();
+    if (!errorKey) return false;
+    if (this.lastErrorKey === errorKey && now - this.lastErrorAt < 2000) {
+      return true;
+    }
+    this.lastErrorKey = errorKey;
+    this.lastErrorAt = now;
+    return false;
   }
 }

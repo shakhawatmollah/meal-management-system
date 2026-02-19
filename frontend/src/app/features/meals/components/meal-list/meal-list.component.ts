@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, NgZone, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatSortModule } from '@angular/material/sort';
@@ -14,15 +15,17 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { MealService } from '../../../../core/services/api/meal-api.service';
-import { Meal, MealRequest, SearchParams } from '../../../../core/models/api.models';
+import { AuthService } from '../../../../core/services/auth.service';
+import { Meal, SearchParams } from '../../../../core/models/api.models';
 import { MatChip } from "@angular/material/chips";
-import { withLoading } from '../../../../shared/services/loading.operator';
+import { finalize, retry } from 'rxjs';
 
 @Component({
   selector: 'app-meal-list',
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     MatTableModule,
     MatPaginatorModule,
     MatSortModule,
@@ -45,14 +48,15 @@ import { withLoading } from '../../../../shared/services/loading.operator';
             <mat-form-field appearance="outline" class="search-field">
               <mat-label>Search</mat-label>
               <input matInput 
-                     formControlName="search" 
+                     [(ngModel)]="filters.search"
+                     name="search"
                      placeholder="Search meals..."
                      (keyup)="applyFilter()">
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="filter-field">
               <mat-label>Type</mat-label>
-              <mat-select formControlName="type" (selectionChange)="applyFilter()">
+              <mat-select [(ngModel)]="filters.type" name="type" (selectionChange)="applyFilter()">
                 <mat-option value="">All Types</mat-option>
                 <mat-option value="BREAKFAST">Breakfast</mat-option>
                 <mat-option value="LUNCH">Lunch</mat-option>
@@ -63,10 +67,10 @@ import { withLoading } from '../../../../shared/services/loading.operator';
 
             <mat-form-field appearance="outline" class="filter-field">
               <mat-label>Availability</mat-label>
-              <mat-select formControlName="available" (selectionChange)="applyFilter()">
+              <mat-select [(ngModel)]="filters.available" name="available" (selectionChange)="applyFilter()">
                 <mat-option value="">All</mat-option>
-                <mat-option [value]="true">Available</mat-option>
-                <mat-option [value]="false">Not Available</mat-option>
+                <mat-option value="true">Available</mat-option>
+                <mat-option value="false">Not Available</mat-option>
               </mat-select>
             </mat-form-field>
 
@@ -88,7 +92,7 @@ import { withLoading } from '../../../../shared/services/loading.operator';
             <mat-spinner diameter="40"></mat-spinner>
           </div>
           
-          <div class="table-container" *ngIf="!isLoading">
+          <div class="table-container">
             <table mat-table 
                    [dataSource]="meals" 
                    matSort 
@@ -235,58 +239,65 @@ import { withLoading } from '../../../../shared/services/loading.operator';
     }
   `]
 })
-export class MealListComponent {
+export class MealListComponent implements OnInit {
   meals: Meal[] = [];
   totalElements = 0;
   pageSize = 10;
-  isLoading = false;
+  isLoading = true;
   isAdmin = false;
+  filters = {
+    search: '',
+    type: '',
+    available: ''
+  };
 
   displayedColumns: string[] = ['id', 'name', 'type', 'price', 'dailyCapacity', 'available', 'actions'];
 
   constructor(
     private mealService: MealService,
+    private authService: AuthService,
     private router: Router,
-    private snackBar: MatSnackBar
-  ) {}
-
-  ngOnInit(): void {
-    this.loadMeals();
-    this.checkAdminRole();
+    private snackBar: MatSnackBar,
+    private ngZone: NgZone
+  ) {
+    this.isAdmin = this.authService.isAdmin();
   }
 
-  private checkAdminRole(): void {
-    // This would come from your auth service
-    // For now, we'll assume admin role check
-    this.isAdmin = true; // Change this based on actual auth logic
+  ngOnInit(): void {
+    this.loadMeals(this.getDefaultSearchParams());
   }
 
   loadMeals(params?: SearchParams): void {
-    this.mealService.getMeals(params).pipe(
-      withLoading((loading) => {
-        this.isLoading = loading;
+    const effectiveParams = params ?? this.getDefaultSearchParams();
+    this.isLoading = true;
+    this.mealService.getMeals(effectiveParams).pipe(
+      retry({ count: 1 }),
+      finalize(() => {
+        this.ngZone.run(() => {
+          this.isLoading = false;
+        });
       })
     ).subscribe({
       next: (response) => {
-        this.meals = response.data ?? [];
-        this.totalElements = response.pagination?.totalElements ?? this.meals.length;
+        this.ngZone.run(() => {
+          const pageData = this.unwrapPageData<Meal>(response.data);
+          this.meals = pageData.items;
+          this.totalElements = response.pagination?.totalElements ?? pageData.totalElements;
+        });
       },
       error: () => {
-        this.snackBar.open('Failed to load meals', 'Close', {
-          duration: 3000,
-          horizontalPosition: 'end',
-          verticalPosition: 'top'
+        this.ngZone.run(() => {
+          this.snackBar.open('Failed to load meals', 'Close', {
+            duration: 3000,
+            horizontalPosition: 'end',
+            verticalPosition: 'top'
+          });
         });
-      }
+      },
     });
   }
 
   applyFilter(): void {
-    // Implement filter logic here
-    const searchValue = (document.querySelector('input[formcontrolname="search"]') as HTMLInputElement)?.value || '';
-    const typeValue = (document.querySelector('mat-select[formcontrolname="type"]') as any)?.value || '';
-    const availableValue = (document.querySelector('mat-select[formcontrolname="available"]') as any)?.value || '';
-
     const params: SearchParams = {
       page: 0,
       size: this.pageSize,
@@ -294,9 +305,9 @@ export class MealListComponent {
       direction: 'ASC'
     };
 
-    if (searchValue) params.search = searchValue;
-    if (typeValue) params.type = typeValue;
-    if (availableValue !== '') params.available = availableValue === 'true';
+    if (this.filters.search) params.search = this.filters.search;
+    if (this.filters.type) params.type = this.filters.type;
+    if (this.filters.available !== '') params.available = this.filters.available === 'true';
 
     this.loadMeals(params);
   }
@@ -363,5 +374,30 @@ export class MealListComponent {
       case 'SNACK': return 'primary';
       default: return '';
     }
+  }
+
+  private unwrapPageData<T>(data: unknown): { items: T[]; totalElements: number } {
+    if (Array.isArray(data)) {
+      return { items: data, totalElements: data.length };
+    }
+
+    if (data && typeof data === 'object' && Array.isArray((data as { content?: T[] }).content)) {
+      const page = data as { content: T[]; totalElements?: number };
+      return {
+        items: page.content,
+        totalElements: page.totalElements ?? page.content.length
+      };
+    }
+
+    return { items: [], totalElements: 0 };
+  }
+
+  private getDefaultSearchParams(): SearchParams {
+    return {
+      page: 0,
+      size: this.pageSize,
+      sort: 'name',
+      direction: 'ASC'
+    };
   }
 }

@@ -90,7 +90,7 @@ import { DailyOperationsReport } from '../../../../core/services/report.service'
 })
 export class DailyOperationsReportComponent implements OnChanges {
   
-  @Input() data?: DailyOperationsReport;
+  @Input() data!: DailyOperationsReport;
   
   ngOnChanges(changes: SimpleChanges) {
     if (changes['data'] && this.data) {
