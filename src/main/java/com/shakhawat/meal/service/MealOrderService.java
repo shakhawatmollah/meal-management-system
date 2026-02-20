@@ -11,6 +11,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -41,6 +44,7 @@ public class MealOrderService {
     public MealOrderDTO.Response createOrder(@Valid MealOrderDTO.Request request) {
         log.info("Creating order - employeeId: {}, mealId: {}, date: {}",
                 request.getEmployeeId(), request.getMealId(), request.getOrderDate());
+        ensureCanActOnEmployee(request.getEmployeeId());
 
         Employee employee = employeeRepository.findById(request.getEmployeeId())
                 .orElseThrow(() -> new ResourceNotFoundException("Employee", request.getEmployeeId()));
@@ -145,11 +149,18 @@ public class MealOrderService {
 
         MealOrder order = orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("MealOrder", id));
+        ensureCanAccessOrder(order);
         return entityMapper.toDto(order);
     }
 
     public Page<MealOrderDTO.Response> getAllOrders(Pageable pageable) {
         log.debug("Fetching all orders with pagination");
+
+        Employee currentEmployee = getCurrentEmployeeIfRestrictedUser();
+        if (currentEmployee != null) {
+            return orderRepository.findByEmployeeId(currentEmployee.getId(), pageable)
+                    .map(entityMapper::toDto);
+        }
 
         return orderRepository.findAll(pageable)
                 .map(entityMapper::toDto);
@@ -157,6 +168,7 @@ public class MealOrderService {
 
     public List<MealOrderDTO.Response> getOrdersByEmployee(Long employeeId) {
         log.debug("Fetching orders for employee: {}", employeeId);
+        ensureCanActOnEmployee(employeeId);
 
         return orderRepository.findByEmployeeIdWithDetails(employeeId).stream()
                 .map(entityMapper::toDto)
@@ -165,6 +177,7 @@ public class MealOrderService {
 
     public List<MealOrderDTO.Response> getOrdersByDate(LocalDate date) {
         log.debug("Fetching orders for date: {}", date);
+        ensurePrivilegedUser();
 
         return orderRepository.findByOrderDateWithDetails(date).stream()
                 .map(entityMapper::toDto)
@@ -194,6 +207,7 @@ public class MealOrderService {
 
         MealOrder order = orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("MealOrder", id));
+        ensureCanAccessOrder(order);
 
         if (order.getStatus() == OrderStatus.DELIVERED) {
             throw new InvalidOperationException("Cannot cancel a delivered order");
@@ -212,5 +226,64 @@ public class MealOrderService {
 
         auditService.logUpdate("MealOrder", order.getId(), "Status: " + OrderStatus.PENDING, "Status: CANCELLED");
         log.info("Order cancelled successfully - orderId: {}", id);
+    }
+
+    private void ensureCanActOnEmployee(Long employeeId) {
+        Employee currentEmployee = getCurrentEmployeeIfRestrictedUser();
+        if (currentEmployee == null) {
+            return;
+        }
+
+        if (!currentEmployee.getId().equals(employeeId)) {
+            throw new AccessDeniedException("You can only access your own orders");
+        }
+    }
+
+    private void ensureCanAccessOrder(MealOrder order) {
+        Employee currentEmployee = getCurrentEmployeeIfRestrictedUser();
+        if (currentEmployee == null) {
+            return;
+        }
+
+        if (!currentEmployee.getId().equals(order.getEmployee().getId())) {
+            throw new AccessDeniedException("You can only access your own orders");
+        }
+    }
+
+    private void ensurePrivilegedUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()
+                || "anonymousUser".equals(authentication.getPrincipal())) {
+            return;
+        }
+
+        if (!isPrivileged(authentication)) {
+            throw new AccessDeniedException("Access denied");
+        }
+    }
+
+    /**
+     * Returns current employee only for ROLE_EMPLOYEE users.
+     * For admin/staff (or missing auth context), returns null to indicate unrestricted flow.
+     */
+    private Employee getCurrentEmployeeIfRestrictedUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()
+                || "anonymousUser".equals(authentication.getPrincipal())) {
+            return null;
+        }
+
+        if (isPrivileged(authentication)) {
+            return null;
+        }
+
+        return employeeRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new AccessDeniedException("Authenticated employee not found"));
+    }
+
+    private boolean isPrivileged(Authentication authentication) {
+        return authentication.getAuthorities().stream().anyMatch(authority ->
+                "ROLE_ADMIN".equals(authority.getAuthority()) ||
+                        "ROLE_CAFETERIA_STAFF".equals(authority.getAuthority()));
     }
 }

@@ -28,10 +28,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: '21'
           distribution: 'temurin'
           cache: maven
 
@@ -41,11 +41,8 @@ jobs:
       - name: Run tests
         run: ./mvnw clean verify --no-transfer-progress -B
 
-      - name: Build and test
-        run: mvn clean verify
-
       - name: Generate code coverage report
-        run: mvn jacoco:report
+        run: ./mvnw jacoco:report --no-transfer-progress -B
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
@@ -54,7 +51,7 @@ jobs:
 
       - name: SonarQube Scan
         run: |
-          mvn sonar:sonar \
+          ./mvnw sonar:sonar --no-transfer-progress -B \
             -Dsonar.projectKey=meal-management \
             -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
             -Dsonar.login=${{ secrets.SONAR_TOKEN }}
@@ -67,10 +64,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Set up JDK 17
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: '21'
           distribution: 'temurin'
 
       - name: Build with Maven

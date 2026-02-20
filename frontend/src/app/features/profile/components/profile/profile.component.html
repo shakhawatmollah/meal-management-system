@@ -8,11 +8,13 @@
     </mat-card-header>
     
     <mat-card-content>
+      <div *ngIf="isLoading" class="loading-state">Loading profile...</div>
+
       <form class="profile-form" *ngIf="user">
         <div class="form-row">
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Name</mat-label>
-            <input matInput [(ngModel)]="user.name" name="name" [readonly]="!isEditing">
+            <input matInput [(ngModel)]="editable.name" name="name" [readonly]="!isEditing">
           </mat-form-field>
         </div>
 
@@ -26,37 +28,37 @@
         <div class="form-row">
           <mat-form-field appearance="outline" class="half-width">
             <mat-label>Role</mat-label>
-            <input matInput [(ngModel)]="user.role" name="role" [readonly]="!isEditing">
+            <input matInput [ngModel]="getRoleDisplay()" name="role" readonly>
           </mat-form-field>
           
           <mat-form-field appearance="outline" class="half-width">
             <mat-label>Department</mat-label>
-            <input matInput [(ngModel)]="user.department" name="department" [readonly]="!isEditing">
+            <input matInput [(ngModel)]="editable.department" name="department" [readonly]="!isEditing">
           </mat-form-field>
         </div>
 
         <div class="form-row">
           <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Phone</mat-label>
-            <input matInput [(ngModel)]="user.phone" name="phone" [readonly]="!isEditing">
+            <mat-label>Status</mat-label>
+            <input matInput [ngModel]="user.status" name="status" readonly>
           </mat-form-field>
         </div>
       </form>
     </mat-card-content>
 
     <mat-card-actions class="profile-actions">
-      <button mat-raised-button color="primary" (click)="enableEdit()" *ngIf="!isEditing">
+      <button mat-raised-button color="primary" (click)="enableEdit()" *ngIf="!isEditing && user" [disabled]="isLoading">
         <mat-icon>edit</mat-icon>
         Edit Profile
       </button>
       
       <div class="edit-actions" *ngIf="isEditing">
-        <button mat-raised-button color="primary" (click)="saveProfile()">
+        <button mat-raised-button color="primary" (click)="saveProfile()" [disabled]="isLoading">
           <mat-icon>save</mat-icon>
           Save
         </button>
         
-        <button mat-stroked-button color="warn" (click)="cancelEdit()">
+        <button mat-stroked-button color="warn" (click)="cancelEdit()" [disabled]="isLoading">
           <mat-icon>cancel</mat-icon>
           Cancel
         </button>

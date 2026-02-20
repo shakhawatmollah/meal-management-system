@@ -198,7 +198,7 @@ class EmployeeServiceTest {
         when(employeeRepository.findById(1L)).thenReturn(Optional.of(employee));
         when(employeeRepository.existsByEmail("new@example.com")).thenReturn(true);
 
-        EmployeeDTO.Request updateRequest = EmployeeDTO.Request.builder()
+        EmployeeDTO.UpdateRequest updateRequest = EmployeeDTO.UpdateRequest.builder()
                 .email("new@example.com")
                 .build();
 
@@ -220,10 +220,9 @@ class EmployeeServiceTest {
             when(employeeRepository.save(any())).thenReturn(employee);
             when(entityMapper.toDto(any(Employee.class))).thenReturn(employeeResponse);
 
-            EmployeeDTO.Request updateRequest = EmployeeDTO.Request.builder()
+            EmployeeDTO.UpdateRequest updateRequest = EmployeeDTO.UpdateRequest.builder()
                     .name("John Updated")
                     .email("john@example.com")
-                    .password("NewPassword@123")
                     .department("Engineering")
                     .build();
 
@@ -244,10 +243,9 @@ class EmployeeServiceTest {
             when(employeeRepository.findById(1L)).thenReturn(Optional.of(employee));
             when(employeeRepository.existsByEmail("jane@example.com")).thenReturn(true);
 
-            EmployeeDTO.Request updateRequest = EmployeeDTO.Request.builder()
+            EmployeeDTO.UpdateRequest updateRequest = EmployeeDTO.UpdateRequest.builder()
                     .name("John Doe")
                     .email("jane@example.com") // Different email that exists
-                    .password("Password@123")
                     .department("IT")
                     .build();
 

@@ -26,28 +26,30 @@ export class GlobalErrorHandler implements ErrorHandler {
       // Client-side error
       errorMessage = resolvedError.error.message;
     } else if (resolvedError?.status) {
+      const serverMessage = this.extractServerMessage(resolvedError.error);
+
       // HTTP error
       switch (resolvedError.status) {
         case 400:
-          errorMessage = resolvedError.error?.message || 'Bad request';
+          errorMessage = serverMessage || 'Bad request';
           break;
         case 401:
-          errorMessage = 'Unauthorized - Please login again';
+          errorMessage = serverMessage || 'Unauthorized - Please login again';
           break;
         case 403:
-          errorMessage = 'Access denied';
+          errorMessage = serverMessage || 'Access denied';
           break;
         case 404:
-          errorMessage = 'Resource not found';
+          errorMessage = serverMessage || 'Resource not found';
           break;
         case 409:
-          errorMessage = resolvedError.error?.message || 'Conflict occurred';
+          errorMessage = serverMessage || 'Conflict occurred';
           break;
         case 500:
-          errorMessage = 'Internal server error';
+          errorMessage = serverMessage || 'Internal server error';
           break;
         default:
-          errorMessage = resolvedError.error?.message || `Server error: ${resolvedError.status}`;
+          errorMessage = serverMessage || `Server error: ${resolvedError.status}`;
       }
     } else if (resolvedError?.message) {
       // JavaScript error
@@ -91,5 +93,34 @@ export class GlobalErrorHandler implements ErrorHandler {
     this.lastErrorKey = errorKey;
     this.lastErrorAt = now;
     return false;
+  }
+
+  private extractServerMessage(body: unknown): string | null {
+    if (!body || typeof body !== 'object') {
+      return null;
+    }
+
+    const payload = body as Record<string, unknown>;
+
+    const directMessage = payload['message'];
+    if (typeof directMessage === 'string' && directMessage.trim().length > 0) {
+      return directMessage;
+    }
+
+    const validationErrors = payload['validationErrors'];
+    if (validationErrors && typeof validationErrors === 'object') {
+      const first = Object.values(validationErrors as Record<string, unknown>)
+        .find((value) => typeof value === 'string' && value.trim().length > 0);
+      if (typeof first === 'string') {
+        return first;
+      }
+    }
+
+    const errorText = payload['error'];
+    if (typeof errorText === 'string' && errorText.trim().length > 0) {
+      return errorText;
+    }
+
+    return null;
   }
 }

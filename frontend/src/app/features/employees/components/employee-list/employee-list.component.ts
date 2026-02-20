@@ -71,6 +71,7 @@ import { finalize, retry } from 'rxjs';
                 <mat-option value="">All Status</mat-option>
                 <mat-option value="ACTIVE">Active</mat-option>
                 <mat-option value="INACTIVE">Inactive</mat-option>
+                <mat-option value="ON_LEAVE">On Leave</mat-option>
               </mat-select>
             </mat-form-field>
 
@@ -128,7 +129,7 @@ import { finalize, retry } from 'rxjs';
               <ng-container matColumnDef="status">
                 <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
                 <td mat-cell *matCellDef="let row">
-                  <mat-chip [color]="row.status === 'ACTIVE' ? 'primary' : 'warn'">
+                  <mat-chip [color]="getStatusColor(row.status)">
                     {{ row.status }}
                   </mat-chip>
                 </td>
@@ -374,6 +375,19 @@ export class EmployeeListComponent implements OnInit {
       case 'Marketing': return 'primary';
       case 'Operations': return 'accent';
       default: return '';
+    }
+  }
+
+  getStatusColor(status: string): string {
+    switch (status) {
+      case 'ACTIVE':
+        return 'primary';
+      case 'INACTIVE':
+        return 'warn';
+      case 'ON_LEAVE':
+        return 'accent';
+      default:
+        return '';
     }
   }
 

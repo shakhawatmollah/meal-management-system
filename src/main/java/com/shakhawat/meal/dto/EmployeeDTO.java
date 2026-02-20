@@ -22,9 +22,30 @@ public class EmployeeDTO {
         @Email(message = "Invalid email format")
         private String email;
 
-        @NotBlank(message = "Password is required")
-        @Size(min = 8, message = "Password must be at least 8 characters")
+        // Required on create; optional on update.
         private String password;
+
+        @NotBlank(message = "Department is required")
+        private String department;
+
+        private EmployeeStatus status;
+        private Set<Role> roles;
+        private BigDecimal monthlyBudget;
+        private Integer monthlyOrderLimit;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class UpdateRequest {
+        @NotBlank(message = "Name is required")
+        @Size(min = 2, max = 100)
+        private String name;
+
+        @NotBlank(message = "Email is required")
+        @Email(message = "Invalid email format")
+        private String email;
 
         @NotBlank(message = "Department is required")
         private String department;

@@ -78,7 +78,7 @@ import { withLoading } from '../../../../shared/services/loading.operator';
                 Password is required
               </mat-error>
               <mat-error *ngIf="employeeForm.get('password')?.hasError('minlength')">
-                Password must be at least 6 characters
+                Password must be at least 8 characters
               </mat-error>
             </mat-form-field>
 
@@ -230,7 +230,7 @@ export class EmployeeFormComponent implements OnInit {
     return this.fb.group({
       name: ['', [Validators.required, Validators.minLength(2)]],
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]],
+      password: ['', [Validators.required, Validators.minLength(8)]],
       department: ['', Validators.required],
       monthlyBudget: [0, [Validators.required, Validators.min(0)]],
       monthlyOrderLimit: [0, [Validators.required, Validators.min(1)]]
@@ -295,8 +295,8 @@ export class EmployeeFormComponent implements OnInit {
         });
         this.router.navigate(['/employees']);
       },
-      error: () => {
-        this.snackBar.open('Failed to create employee', 'Close', {
+      error: (error) => {
+        this.snackBar.open(this.extractErrorMessage(error, 'Failed to create employee'), 'Close', {
           duration: 3000,
           horizontalPosition: 'end',
           verticalPosition: 'top'
@@ -319,8 +319,8 @@ export class EmployeeFormComponent implements OnInit {
         });
         this.router.navigate(['/employees']);
       },
-      error: () => {
-        this.snackBar.open('Failed to update employee', 'Close', {
+      error: (error) => {
+        this.snackBar.open(this.extractErrorMessage(error, 'Failed to update employee'), 'Close', {
           duration: 3000,
           horizontalPosition: 'end',
           verticalPosition: 'top'
@@ -331,5 +331,22 @@ export class EmployeeFormComponent implements OnInit {
 
   cancel(): void {
     this.router.navigate(['/employees']);
+  }
+
+  private extractErrorMessage(error: any, fallback: string): string {
+    const payload = error?.error;
+    if (payload?.message && typeof payload.message === 'string') {
+      return payload.message;
+    }
+    if (payload?.validationErrors && typeof payload.validationErrors === 'object') {
+      const first = Object.values(payload.validationErrors).find((value) => typeof value === 'string');
+      if (typeof first === 'string') {
+        return first;
+      }
+    }
+    if (error?.message && typeof error.message === 'string') {
+      return error.message;
+    }
+    return fallback;
   }
 }

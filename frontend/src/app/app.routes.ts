@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { AuthGuard } from './guards/auth.guard';
 import { AdminGuard } from './guards/admin.guard';
+import { StaffOrAdminGuard } from './guards/staff-or-admin.guard';
 
 // Auth Components
 import { LoginComponent } from './features/auth/components/login/login.component';
@@ -64,7 +65,7 @@ export const routes: Routes = [
   {
     path: 'orders',
     component: OrderListComponent,
-    canActivate: [AuthGuard, AdminGuard]
+    canActivate: [AuthGuard, StaffOrAdminGuard]
   },
   {
     path: 'orders/new',
@@ -102,7 +103,7 @@ export const routes: Routes = [
   {
     path: 'reports',
     component: ReportsDashboardComponent,
-    canActivate: [AuthGuard, AdminGuard]
+    canActivate: [AuthGuard, StaffOrAdminGuard]
   },
   
   { path: '**', redirectTo: '/dashboard' }

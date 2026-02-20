@@ -345,6 +345,17 @@ class MealManagementIntegrationTest {
         employee2.addRole(Role.ROLE_EMPLOYEE);
         Employee savedEmployee2 = employeeRepository.save(employee2);
 
+        AuthDTO.LoginRequest loginRequest2 = new AuthDTO.LoginRequest("inventory2@test.com", "Password@123");
+        MvcResult loginResult2 = mockMvc.perform(post("/api/v1/auth/login")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginRequest2)))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String token2 = objectMapper.readTree(loginResult2.getResponse().getContentAsString())
+                .get("data").get("accessToken").asText();
+
         // Try to order more (should fail due to insufficient inventory)
         MealOrderDTO.Request order2 = MealOrderDTO.Request.builder()
                 .employeeId(savedEmployee2.getId())
@@ -355,7 +366,7 @@ class MealManagementIntegrationTest {
 
         mockMvc.perform(post("/api/v1/orders")
                         .with(csrf())
-                        .header("Authorization", "Bearer " + token)
+                        .header("Authorization", "Bearer " + token2)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(order2)))
                 .andExpect(status().isBadRequest())

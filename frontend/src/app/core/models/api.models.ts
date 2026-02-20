@@ -61,19 +61,34 @@ export interface LogoutRequest {
   refreshToken: string;
 }
 
+export interface UserProfile {
+  id: number;
+  name: string;
+  email: string;
+  department: string;
+  status: 'ACTIVE' | 'INACTIVE' | 'ON_LEAVE';
+  roles: string[];
+}
+
+export interface UpdateProfileRequest {
+  name: string;
+  department: string;
+}
+
 // Employee Interfaces
 export interface Employee {
   id: number;
   name: string;
   email: string;
   department: string;
-  status: 'ACTIVE' | 'INACTIVE';
+  status: 'ACTIVE' | 'INACTIVE' | 'ON_LEAVE';
   monthlyBudget: number;
   currentMonthSpent: number;
   monthlyOrderLimit: number;
   roles: string[];
-  createdAt: string;
-  updatedAt: string;
+  accountNonLocked?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface EmployeeRequest {
@@ -95,8 +110,8 @@ export interface Meal {
   price: number;
   available: boolean;
   dailyCapacity: number;
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface MealRequest {

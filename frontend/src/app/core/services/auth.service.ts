@@ -41,6 +41,12 @@ export class AuthService {
     map(user => Array.isArray(user?.roles) && user.roles.includes('ROLE_ADMIN')),
     distinctUntilChanged()
   );
+  isPrivileged$ = this.currentUserSubject.pipe(
+    map(user => Array.isArray(user?.roles) && (
+      user.roles.includes('ROLE_ADMIN') || user.roles.includes('ROLE_CAFETERIA_STAFF')
+    )),
+    distinctUntilChanged()
+  );
 
   constructor(
     private http: HttpClient,

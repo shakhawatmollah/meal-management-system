@@ -79,7 +79,7 @@ public class EmployeeController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<EmployeeDTO.Response>> updateEmployee(
             @PathVariable Long id,
-            @Valid @RequestBody EmployeeDTO.Request request) {
+            @Valid @RequestBody EmployeeDTO.UpdateRequest request) {
         EmployeeDTO.Response response = employeeService.updateEmployee(id, request);
         return ResponseEntity.ok(ApiResponse.success("Employee updated successfully", response));
     }

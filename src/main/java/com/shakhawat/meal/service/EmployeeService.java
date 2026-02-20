@@ -35,6 +35,13 @@ public class EmployeeService {
     public EmployeeDTO.Response createEmployee(@Valid EmployeeDTO.Request request) {
         log.info("Creating employee with email: {}", request.getEmail());
 
+        if (!StringUtils.hasText(request.getPassword())) {
+            throw new InvalidOperationException("Password is required");
+        }
+        if (request.getPassword().trim().length() < 8) {
+            throw new InvalidOperationException("Password must be at least 8 characters");
+        }
+
         if (employeeRepository.existsByEmail(request.getEmail())) {
             throw new DuplicateResourceException("Employee with email " + request.getEmail() + " already exists");
         }
@@ -98,7 +105,7 @@ public class EmployeeService {
 
     @Transactional
     @CacheEvict(value = "employees", key = "#id")
-    public EmployeeDTO.Response updateEmployee(Long id, @Valid EmployeeDTO.Request request) {
+    public EmployeeDTO.Response updateEmployee(Long id, @Valid EmployeeDTO.UpdateRequest request) {
         log.info("Updating employee with ID: {}", id);
 
         Employee employee = employeeRepository.findById(id)
@@ -119,6 +126,12 @@ public class EmployeeService {
         }
         if (request.getRoles() != null && !request.getRoles().isEmpty()) {
             employee.setRoles(request.getRoles());
+        }
+        if (request.getMonthlyBudget() != null) {
+            employee.setMonthlyBudget(request.getMonthlyBudget());
+        }
+        if (request.getMonthlyOrderLimit() != null) {
+            employee.setMonthlyOrderLimit(request.getMonthlyOrderLimit());
         }
 
         Employee updatedEmployee = employeeRepository.save(employee);

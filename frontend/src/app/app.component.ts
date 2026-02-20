@@ -54,21 +54,24 @@ import { MatDividerModule } from '@angular/material/divider';
               <span>My Orders</span>
             </button>
             
-            <!-- Admin menu -->
-            <ng-container *ngIf="isAdmin$ | async">
+            <!-- Staff/Admin menu -->
+            <ng-container *ngIf="isPrivileged$ | async">
               <button mat-button routerLink="/orders" routerLinkActive="active">
                 <mat-icon>list_alt</mat-icon>
                 <span>All Orders</span>
               </button>
-              
-              <button mat-button routerLink="/employees" routerLinkActive="active">
-                <mat-icon>people</mat-icon>
-                <span>Employees</span>
-              </button>
-              
+
               <button mat-button routerLink="/reports" routerLinkActive="active">
                 <mat-icon>assessment</mat-icon>
                 <span>Reports</span>
+              </button>
+            </ng-container>
+
+            <!-- Admin only -->
+            <ng-container *ngIf="isAdmin$ | async">
+              <button mat-button routerLink="/employees" routerLinkActive="active">
+                <mat-icon>people</mat-icon>
+                <span>Employees</span>
               </button>
             </ng-container>
             
@@ -165,10 +168,12 @@ import { MatDividerModule } from '@angular/material/divider';
 export class AppComponent {
   isAuthenticated$: Observable<boolean>;
   isAdmin$: Observable<boolean>;
+  isPrivileged$: Observable<boolean>;
 
   constructor(private authService: AuthService) {
     this.isAuthenticated$ = this.authService.isAuthenticated$;
     this.isAdmin$ = this.authService.isAdmin$;
+    this.isPrivileged$ = this.authService.isPrivileged$;
   }
 
   logout(): void {

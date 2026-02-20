@@ -266,7 +266,6 @@ class EmployeeControllerTest {
                     .andExpect(jsonPath("$.error").value("Validation Failed"))
                     .andExpect(jsonPath("$.validationErrors.name").value("Name is required"))
                     .andExpect(jsonPath("$.validationErrors.email").value("Invalid email format"))
-                    .andExpect(jsonPath("$.validationErrors.password").value("Password must be at least 8 characters"))
                     .andExpect(jsonPath("$.validationErrors.department").value("Department is required"));
 
             verify(employeeService, never()).createEmployee(any());
@@ -358,10 +357,9 @@ class EmployeeControllerTest {
         @WithMockUser(roles = "ADMIN")
         void shouldUpdateEmployee() throws Exception {
             // Given
-            EmployeeDTO.Request updateRequest = EmployeeDTO.Request.builder()
+            EmployeeDTO.UpdateRequest updateRequest = EmployeeDTO.UpdateRequest.builder()
                     .name("John Doe Updated")
                     .email("john.updated@example.com")
-                    .password("NewPassword@123")
                     .department("Engineering")
                     .status(EmployeeStatus.ACTIVE)
                     .monthlyBudget(new BigDecimal("750.00"))
@@ -379,7 +377,7 @@ class EmployeeControllerTest {
                     .accountNonLocked(true)
                     .build();
 
-            when(employeeService.updateEmployee(eq(1L), any(EmployeeDTO.Request.class)))
+            when(employeeService.updateEmployee(eq(1L), any(EmployeeDTO.UpdateRequest.class)))
                     .thenReturn(updatedResponse);
 
             // When & Then

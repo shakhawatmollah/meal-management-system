@@ -62,8 +62,8 @@ public class ReportServiceImpl implements ReportService {
         return DailyOperationsReport.builder()
             .reportDate(date)
             .totalOrders(totalOrders)
-            .uniqueEmployees(uniqueEmployees.intValue())
-            .totalMealsAvailable(availableMeals.intValue())
+            .uniqueEmployees(asInt(uniqueEmployees))
+            .totalMealsAvailable(asInt(availableMeals))
             .dailyRevenue(dailyRevenue)
             .avgOrderValue(calculateAverageOrderValue(hourlyBreakdown))
             .peakHour(calculatePeakHour(hourlyBreakdown))
@@ -199,8 +199,8 @@ public class ReportServiceImpl implements ReportService {
     
     private String calculatePeakHour(List<Object[]> hourlyBreakdown) {
         return hourlyBreakdown.stream()
-            .max(Comparator.comparing(data -> (Integer) data[1]))
-            .map(data -> data[0] + ":00")
+            .max(Comparator.comparing(data -> asInt(data[1])))
+            .map(data -> asInt(data[0]) + ":00")
             .orElse("12:00");
     }
     
@@ -219,9 +219,9 @@ public class ReportServiceImpl implements ReportService {
     private List<DailyOperationsReport.MealTypeStats> convertToMealTypeStats(List<Object[]> mealTypeBreakdown) {
         return mealTypeBreakdown.stream()
             .map(data -> DailyOperationsReport.MealTypeStats.builder()
-                .mealType((String) data[0])
-                .orderCount((Integer) data[1])
-                .revenue(((BigDecimal) data[2]).doubleValue())
+                .mealType(asString(data[0]))
+                .orderCount(asInt(data[1]))
+                .revenue(asDouble(data[2]))
                 .build())
             .collect(Collectors.toList());
     }
@@ -229,9 +229,9 @@ public class ReportServiceImpl implements ReportService {
     private List<DailyOperationsReport.HourlyStats> convertToHourlyStats(List<Object[]> hourlyBreakdown) {
         return hourlyBreakdown.stream()
             .map(data -> DailyOperationsReport.HourlyStats.builder()
-                .hour((Integer) data[0])
-                .orderCount((Integer) data[1])
-                .revenue(((BigDecimal) data[2]).doubleValue())
+                .hour(asInt(data[0]))
+                .orderCount(asInt(data[1]))
+                .revenue(asDouble(data[2]))
                 .build())
             .collect(Collectors.toList());
     }
@@ -243,12 +243,12 @@ public class ReportServiceImpl implements ReportService {
             
         return monthlyRevenue.stream()
             .map(data -> MonthlyFinancialReport.DepartmentStats.builder()
-                .department((String) data[0])
-                .orderCount((Integer) data[1])
-                .revenue((BigDecimal) data[2])
-                .uniqueEmployees((Integer) data[3])
+                .department(asString(data[0]))
+                .orderCount(asInt(data[1]))
+                .revenue(asBigDecimal(data[2]))
+                .uniqueEmployees(asInt(data[3]))
                 .percentageOfTotal(totalRevenue.compareTo(BigDecimal.ZERO) > 0 ? 
-                    ((BigDecimal) data[2]).divide(totalRevenue, 4, RoundingMode.HALF_UP).doubleValue() * 100 : 0.0)
+                    asBigDecimal(data[2]).divide(totalRevenue, 4, RoundingMode.HALF_UP).doubleValue() * 100 : 0.0)
                 .build())
             .collect(Collectors.toList());
     }
@@ -256,12 +256,12 @@ public class ReportServiceImpl implements ReportService {
     private List<MonthlyFinancialReport.MealPerformance> convertToMealPerformance(List<Object[]> mealPerformance) {
         return mealPerformance.stream()
             .map(data -> MonthlyFinancialReport.MealPerformance.builder()
-                .mealName((String) data[0])
-                .mealType((String) data[1])
-                .unitPrice((BigDecimal) data[2])
-                .timesOrdered((Integer) data[3])
-                .totalRevenue((BigDecimal) data[4])
-                .avgOrderValue(((BigDecimal) data[5]).doubleValue())
+                .mealName(asString(data[0]))
+                .mealType(asString(data[1]))
+                .unitPrice(asBigDecimal(data[2]))
+                .timesOrdered(asInt(data[3]))
+                .totalRevenue(asBigDecimal(data[4]))
+                .avgOrderValue(asDouble(data[5]))
                 .build())
             .collect(Collectors.toList());
     }
@@ -269,8 +269,8 @@ public class ReportServiceImpl implements ReportService {
     private List<MonthlyFinancialReport.EmployeeBudgetAnalysis> convertToEmployeeBudgetAnalysis(List<Object[]> employeeBudgetData) {
         return employeeBudgetData.stream()
             .map(data -> {
-                BigDecimal budget = (BigDecimal) data[2];
-                BigDecimal spent = (BigDecimal) data[3];
+                BigDecimal budget = asBigDecimal(data[2]);
+                BigDecimal spent = asBigDecimal(data[3]);
                 double utilization = budget.compareTo(BigDecimal.ZERO) > 0 ?
                     spent.divide(budget, 4, RoundingMode.HALF_UP).doubleValue() * 100 : 0.0;
                 
@@ -278,8 +278,8 @@ public class ReportServiceImpl implements ReportService {
                                utilization < 50 ? "UNDER_UTILIZED" : "ON_TRACK";
                 
                 return MonthlyFinancialReport.EmployeeBudgetAnalysis.builder()
-                    .employeeName((String) data[0])
-                    .department((String) data[1])
+                    .employeeName(asString(data[0]))
+                    .department(asString(data[1]))
                     .monthlyBudget(budget)
                     .currentSpent(spent)
                     .remainingBudget(budget.subtract(spent))
@@ -293,15 +293,15 @@ public class ReportServiceImpl implements ReportService {
     private List<EmployeePerformanceReport.EmployeeStats> convertToEmployeeStats(List<Object[]> employeeStats) {
         return employeeStats.stream()
             .map(data -> EmployeePerformanceReport.EmployeeStats.builder()
-                .employeeName((String) data[0])
-                .department((String) data[1])
-                .monthlyBudget((BigDecimal) data[2])
-                .currentSpent((BigDecimal) data[3])
-                .totalOrders((Integer) data[4])
-                .avgOrderValue(BigDecimal.valueOf(((BigDecimal) data[5]).doubleValue()))
-                .lastOrderDate((LocalDate) data[6])
-                .utilizationPercentage(((BigDecimal) data[2]).compareTo(BigDecimal.ZERO) > 0 ? 
-                    ((BigDecimal) data[3]).divide((BigDecimal) data[2], 4, RoundingMode.HALF_UP).doubleValue() * 100 : 0.0)
+                .employeeName(asString(data[0]))
+                .department(asString(data[1]))
+                .monthlyBudget(asBigDecimal(data[2]))
+                .currentSpent(asBigDecimal(data[3]))
+                .totalOrders(asInt(data[4]))
+                .avgOrderValue(BigDecimal.valueOf(asDouble(data[5])))
+                .lastOrderDate(asLocalDate(data[6]))
+                .utilizationPercentage(asBigDecimal(data[2]).compareTo(BigDecimal.ZERO) > 0 ? 
+                    asBigDecimal(data[3]).divide(asBigDecimal(data[2]), 4, RoundingMode.HALF_UP).doubleValue() * 100 : 0.0)
                 .build())
             .collect(Collectors.toList());
     }
@@ -314,17 +314,17 @@ public class ReportServiceImpl implements ReportService {
             
         return departmentStats.stream()
             .map(data -> {
-                String dept = (String) data[0];
+                String dept = asString(data[0]);
                 Object[] activeEmpData = activeEmpMap.get(dept);
                 
                 return EmployeePerformanceReport.DepartmentStats.builder()
                     .department(dept)
-                    .totalEmployees((Integer) data[1])
-                    .activeEmployees(activeEmpData != null ? (Integer) activeEmpData[1] : 0)
-                    .totalBudget((BigDecimal) data[2])
-                    .totalSpent((BigDecimal) data[3])
-                    .utilizationRate(((BigDecimal) data[2]).compareTo(BigDecimal.ZERO) > 0 ? 
-                        ((BigDecimal) data[3]).divide((BigDecimal) data[2], 4, RoundingMode.HALF_UP).doubleValue() * 100 : 0.0)
+                    .totalEmployees(asInt(data[1]))
+                    .activeEmployees(activeEmpData != null ? asInt(activeEmpData[1]) : 0)
+                    .totalBudget(asBigDecimal(data[2]))
+                    .totalSpent(asBigDecimal(data[3]))
+                    .utilizationRate(asBigDecimal(data[2]).compareTo(BigDecimal.ZERO) > 0 ? 
+                        asBigDecimal(data[3]).divide(asBigDecimal(data[2]), 4, RoundingMode.HALF_UP).doubleValue() * 100 : 0.0)
                     .build();
             })
             .collect(Collectors.toList());
@@ -368,13 +368,13 @@ public class ReportServiceImpl implements ReportService {
     private List<MealPerformanceReport.MealStats> convertToMealStats(List<Object[]> mealStats) {
         return mealStats.stream()
             .map(data -> MealPerformanceReport.MealStats.builder()
-                .mealName((String) data[0])
-                .mealType((String) data[1])
-                .unitPrice((BigDecimal) data[2])
-                .timesOrdered((Integer) data[3])
-                .totalRevenue((BigDecimal) data[4])
-                .avgOrderValue(((BigDecimal) data[5]).doubleValue())
-                .currentlyAvailable((Boolean) data[6])
+                .mealName(asString(data[0]))
+                .mealType(asString(data[1]))
+                .unitPrice(asBigDecimal(data[2]))
+                .timesOrdered(asInt(data[3]))
+                .totalRevenue(asBigDecimal(data[4]))
+                .avgOrderValue(asDouble(data[5]))
+                .currentlyAvailable(asBoolean(data[6]))
                 .build())
             .collect(Collectors.toList());
     }
@@ -386,13 +386,13 @@ public class ReportServiceImpl implements ReportService {
 
         return mealTypeStats.stream()
             .map(data -> MealPerformanceReport.MealTypeStats.builder()
-                .mealType((String) data[0])
-                .uniqueMeals((Integer) data[1])
-                .totalOrders((Integer) data[2])
-                .totalRevenue((BigDecimal) data[3])
-                .avgOrderValue(((BigDecimal) data[4]).doubleValue())
+                .mealType(asString(data[0]))
+                .uniqueMeals(asInt(data[1]))
+                .totalOrders(asInt(data[2]))
+                .totalRevenue(asBigDecimal(data[3]))
+                .avgOrderValue(asDouble(data[4]))
                 .percentageOfTotalRevenue(totalRevenue.compareTo(BigDecimal.ZERO) > 0 ?
-                    ((BigDecimal) data[3]).divide(totalRevenue, 4, RoundingMode.HALF_UP).doubleValue() * 100 : 0.0)
+                    asBigDecimal(data[3]).divide(totalRevenue, 4, RoundingMode.HALF_UP).doubleValue() * 100 : 0.0)
                 .build())
             .collect(Collectors.toList());
     }
@@ -400,9 +400,9 @@ public class ReportServiceImpl implements ReportService {
     private List<MealPerformanceReport.AvailabilityStats> convertToAvailabilityStats(List<Object[]> availabilityStats) {
         return availabilityStats.stream()
             .map(data -> {
-                String mealType = (String) data[0];
-                Integer total = (Integer) data[1];
-                Integer available = (Integer) data[2];
+                String mealType = asString(data[0]);
+                Integer total = asInt(data[1]);
+                Integer available = asInt(data[2]);
                 
                 return MealPerformanceReport.AvailabilityStats.builder()
                     .mealType(mealType)
@@ -446,16 +446,16 @@ public class ReportServiceImpl implements ReportService {
     
     private List<AuditReport.ActionStats> convertToActionStats(List<Object[]> actionStats) {
         Integer totalActions = actionStats.stream()
-            .mapToInt(data -> (Integer) data[1])
+            .mapToInt(data -> asInt(data[1]))
             .sum();
             
         return actionStats.stream()
             .map(data -> AuditReport.ActionStats.builder()
-                .action((String) data[0])
-                .actionCount((Integer) data[1])
-                .percentageOfTotal(totalActions > 0 ? ((Integer) data[1]) * 100.0 / totalActions : 0.0)
-                .firstAction((LocalDateTime) data[2])
-                .lastAction((LocalDateTime) data[3])
+                .action(asString(data[0]))
+                .actionCount(asInt(data[1]))
+                .percentageOfTotal(totalActions > 0 ? asInt(data[1]) * 100.0 / totalActions : 0.0)
+                .firstAction(asLocalDateTime(data[2]))
+                .lastAction(asLocalDateTime(data[3]))
                 .build())
             .collect(Collectors.toList());
     }
@@ -463,9 +463,9 @@ public class ReportServiceImpl implements ReportService {
     private List<AuditReport.UserActivityStats> convertToUserActivityStats(List<Object[]> userActivityStats) {
         return userActivityStats.stream()
             .map(data -> AuditReport.UserActivityStats.builder()
-                .userId((String) data[0])
-                .actionCount((Integer) data[1])
-                .lastActivity((LocalDateTime) data[3])
+                .userId(asString(data[0]))
+                .actionCount(asInt(data[1]))
+                .lastActivity(asLocalDateTime(data[3]))
                 .build())
             .collect(Collectors.toList());
     }
@@ -473,8 +473,8 @@ public class ReportServiceImpl implements ReportService {
     private Map<String, Integer> convertToEntityActivity(List<Object[]> entityActivityStats) {
         return entityActivityStats.stream()
             .collect(Collectors.toMap(
-                data -> (String) data[0],
-                data -> (Integer) data[1]
+                data -> asString(data[0]),
+                data -> asInt(data[1])
             ));
     }
     
@@ -492,5 +492,46 @@ public class ReportServiceImpl implements ReportService {
                 .ipAddress(log.getIpAddress())
                 .build())
             .collect(Collectors.toList());
+    }
+
+    private int asInt(Object value) {
+        if (value == null) return 0;
+        if (value instanceof Number number) return number.intValue();
+        return Integer.parseInt(value.toString());
+    }
+
+    private double asDouble(Object value) {
+        if (value == null) return 0.0;
+        if (value instanceof Number number) return number.doubleValue();
+        return Double.parseDouble(value.toString());
+    }
+
+    private BigDecimal asBigDecimal(Object value) {
+        if (value == null) return BigDecimal.ZERO;
+        if (value instanceof BigDecimal bigDecimal) return bigDecimal;
+        if (value instanceof Number number) return BigDecimal.valueOf(number.doubleValue());
+        return new BigDecimal(value.toString());
+    }
+
+    private String asString(Object value) {
+        return value == null ? "" : value.toString();
+    }
+
+    private Boolean asBoolean(Object value) {
+        if (value == null) return Boolean.FALSE;
+        if (value instanceof Boolean booleanValue) return booleanValue;
+        return Boolean.parseBoolean(value.toString());
+    }
+
+    private LocalDate asLocalDate(Object value) {
+        if (value == null) return null;
+        if (value instanceof LocalDate localDate) return localDate;
+        return LocalDate.parse(value.toString());
+    }
+
+    private LocalDateTime asLocalDateTime(Object value) {
+        if (value == null) return null;
+        if (value instanceof LocalDateTime localDateTime) return localDateTime;
+        return LocalDateTime.parse(value.toString());
     }
 }
