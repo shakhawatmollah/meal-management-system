@@ -27,10 +27,13 @@ import { finalize, retry } from 'rxjs';
     MatProgressSpinnerModule
   ],
   template: `
-    <div class="order-list-container">
+    <div class="order-list-container page-enter">
       <mat-card>
         <mat-card-content>
-          <h2>Order Management</h2>
+          <div class="page-header">
+            <h2>Order Management</h2>
+            <p>Track and manage all employee meal orders in one queue.</p>
+          </div>
           <div class="actions">
             <button mat-raised-button color="primary" (click)="createOrder()">
               <mat-icon>add</mat-icon>
@@ -38,11 +41,14 @@ import { finalize, retry } from 'rxjs';
             </button>
           </div>
           
-          <div *ngIf="isLoading" class="loading-container">
-            <mat-spinner diameter="40"></mat-spinner>
+          <div *ngIf="isLoading" class="table-skeleton">
+            <div class="skeleton skeleton-line lg"></div>
+            <div class="skeleton-row" *ngFor="let _ of [1,2,3,4,5,6]">
+              <div class="skeleton skeleton-line"></div>
+            </div>
           </div>
           
-          <div class="table-container">
+          <div class="table-container" *ngIf="!isLoading">
             <table mat-table [dataSource]="orders" matSort>
               <ng-container matColumnDef="id">
                 <th mat-header-cell *matHeaderCellDef mat-sort-header>ID</th>
@@ -102,20 +108,35 @@ import { finalize, retry } from 'rxjs';
   `,
   styles: [`
     .order-list-container {
-      padding: 2rem;
-      max-width: 1400px;
+      padding: 0.5rem;
+      max-width: 1280px;
       margin: 0 auto;
     }
 
-    .actions {
-      margin-bottom: 1rem;
+    .page-header h2 {
+      margin: 0;
+      font-size: 1.35rem;
     }
 
-    .loading-container {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 200px;
+    .page-header p {
+      margin: 0.3rem 0 0.8rem;
+      color: #64748b;
+      font-size: 0.9rem;
+    }
+
+    .actions {
+      margin-bottom: 0.8rem;
+    }
+
+    .table-skeleton {
+      display: grid;
+      gap: 0.55rem;
+      padding: 0.25rem 0 0.5rem;
+    }
+
+    .skeleton-row {
+      display: grid;
+      gap: 0.35rem;
     }
 
     .table-container {
@@ -127,8 +148,25 @@ import { finalize, retry } from 'rxjs';
       min-width: 800px;
     }
 
+    th.mat-mdc-header-cell {
+      color: #334155;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    td.mat-mdc-cell {
+      color: #1f2937;
+    }
+
     .mat-mdc-button {
       margin-right: 0.5rem;
+    }
+
+    @media (max-width: 768px) {
+      .order-list-container {
+        padding: 0.25rem;
+      }
     }
   `]
 })

@@ -26,60 +26,65 @@ import { MatDividerModule } from '@angular/material/divider';
   ],
   template: `
     <div class="app-container">
-      <!-- Header -->
-      <mat-toolbar color="primary" class="app-header">
-        <mat-toolbar-row>
-          <button mat-icon-button routerLink="/dashboard">
-            <mat-icon>restaurant_menu</mat-icon>
-          </button>
-          
-          <span class="app-title">Meal Management System</span>
-          
+      <div class="bg-orb orb-a"></div>
+      <div class="bg-orb orb-b"></div>
+
+      <mat-toolbar class="app-header">
+        <div class="header-inner">
+          <a class="brand" routerLink="/dashboard">
+            <span class="brand-icon"><mat-icon>restaurant_menu</mat-icon></span>
+            <span class="brand-text">MealFlow</span>
+          </a>
+
           <span class="flex-spacer"></span>
-          
-          <!-- Navigation for authenticated users -->
-          <ng-container *ngIf="isAuthenticated$ | async">
-            <button mat-button routerLink="/dashboard" routerLinkActive="active">
-              <mat-icon>dashboard</mat-icon>
-              <span>Dashboard</span>
-            </button>
-            
-            <button mat-button routerLink="/meals" routerLinkActive="active">
-              <mat-icon>restaurant</mat-icon>
-              <span>Meals</span>
-            </button>
-            
-            <button mat-button routerLink="/my-orders" routerLinkActive="active">
-              <mat-icon>shopping_cart</mat-icon>
-              <span>My Orders</span>
-            </button>
-            
-            <!-- Staff/Admin menu -->
-            <ng-container *ngIf="isPrivileged$ | async">
-              <button mat-button routerLink="/orders" routerLinkActive="active">
-                <mat-icon>list_alt</mat-icon>
-                <span>All Orders</span>
-              </button>
 
-              <button mat-button routerLink="/reports" routerLinkActive="active">
-                <mat-icon>assessment</mat-icon>
-                <span>Reports</span>
-              </button>
-            </ng-container>
+          <ng-container *ngIf="isAuthenticated$ | async; else guestActions">
+            <nav class="desktop-nav">
+              <a mat-button routerLink="/dashboard" routerLinkActive="active-link">
+                <mat-icon>dashboard</mat-icon><span>Dashboard</span>
+              </a>
+              <a mat-button routerLink="/meals" routerLinkActive="active-link">
+                <mat-icon>restaurant</mat-icon><span>Meals</span>
+              </a>
+              <a mat-button routerLink="/my-orders" routerLinkActive="active-link">
+                <mat-icon>shopping_cart</mat-icon><span>My Orders</span>
+              </a>
 
-            <!-- Admin only -->
-            <ng-container *ngIf="isAdmin$ | async">
-              <button mat-button routerLink="/employees" routerLinkActive="active">
-                <mat-icon>people</mat-icon>
-                <span>Employees</span>
-              </button>
-            </ng-container>
-            
-            <!-- User menu -->
-            <button mat-icon-button [matMenuTriggerFor]="userMenu">
+              <ng-container *ngIf="isPrivileged$ | async">
+                <a mat-button routerLink="/orders" routerLinkActive="active-link">
+                  <mat-icon>list_alt</mat-icon><span>All Orders</span>
+                </a>
+                <a mat-button routerLink="/reports" routerLinkActive="active-link">
+                  <mat-icon>assessment</mat-icon><span>Reports</span>
+                </a>
+              </ng-container>
+
+              <ng-container *ngIf="isAdmin$ | async">
+                <a mat-button routerLink="/employees" routerLinkActive="active-link">
+                  <mat-icon>people</mat-icon><span>Employees</span>
+                </a>
+              </ng-container>
+            </nav>
+
+            <button mat-icon-button class="mobile-menu-btn" [matMenuTriggerFor]="mobileNavMenu" aria-label="Open navigation">
+              <mat-icon>menu</mat-icon>
+            </button>
+            <mat-menu #mobileNavMenu="matMenu">
+              <button mat-menu-item routerLink="/dashboard"><mat-icon>dashboard</mat-icon><span>Dashboard</span></button>
+              <button mat-menu-item routerLink="/meals"><mat-icon>restaurant</mat-icon><span>Meals</span></button>
+              <button mat-menu-item routerLink="/my-orders"><mat-icon>shopping_cart</mat-icon><span>My Orders</span></button>
+              <ng-container *ngIf="isPrivileged$ | async">
+                <button mat-menu-item routerLink="/orders"><mat-icon>list_alt</mat-icon><span>All Orders</span></button>
+                <button mat-menu-item routerLink="/reports"><mat-icon>assessment</mat-icon><span>Reports</span></button>
+              </ng-container>
+              <ng-container *ngIf="isAdmin$ | async">
+                <button mat-menu-item routerLink="/employees"><mat-icon>people</mat-icon><span>Employees</span></button>
+              </ng-container>
+            </mat-menu>
+
+            <button mat-icon-button class="user-btn" [matMenuTriggerFor]="userMenu" aria-label="Open user menu">
               <mat-icon>account_circle</mat-icon>
             </button>
-            
             <mat-menu #userMenu="matMenu">
               <button mat-menu-item routerLink="/profile">
                 <mat-icon>person</mat-icon>
@@ -92,24 +97,20 @@ import { MatDividerModule } from '@angular/material/divider';
               </button>
             </mat-menu>
           </ng-container>
-          
-          <!-- Navigation for non-authenticated users -->
-          <ng-container *ngIf="!(isAuthenticated$ | async)">
-            <button mat-button routerLink="/login">
-              <mat-icon>login</mat-icon>
-              <span>Login</span>
-            </button>
-            <button mat-button routerLink="/register">
-              <mat-icon>person_add</mat-icon>
-              <span>Register</span>
-            </button>
-          </ng-container>
-        </mat-toolbar-row>
+
+          <ng-template #guestActions>
+            <div class="guest-actions">
+              <a mat-button routerLink="/login"><mat-icon>login</mat-icon><span>Login</span></a>
+              <a mat-raised-button color="primary" routerLink="/register"><mat-icon>person_add</mat-icon><span>Register</span></a>
+            </div>
+          </ng-template>
+        </div>
       </mat-toolbar>
-      
-      <!-- Main Content -->
+
       <main class="main-content">
-        <router-outlet></router-outlet>
+        <div class="content-shell">
+          <router-outlet></router-outlet>
+        </div>
       </main>
     </div>
   `,
@@ -118,48 +119,148 @@ import { MatDividerModule } from '@angular/material/divider';
       display: flex;
       flex-direction: column;
       min-height: 100vh;
+      position: relative;
+      overflow: hidden;
     }
-    
+
+    .bg-orb {
+      position: fixed;
+      z-index: 0;
+      border-radius: 50%;
+      filter: blur(40px);
+      opacity: 0.35;
+      pointer-events: none;
+    }
+
+    .orb-a {
+      width: 360px;
+      height: 360px;
+      top: -110px;
+      left: -90px;
+      background: #f59e0b;
+    }
+
+    .orb-b {
+      width: 420px;
+      height: 420px;
+      top: 35%;
+      right: -150px;
+      background: #06b6d4;
+    }
+
     .app-header {
       position: sticky;
       top: 0;
       z-index: 1000;
+      background: rgba(255, 255, 255, 0.92);
+      border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+      backdrop-filter: blur(8px);
     }
-    
-    .app-title {
-      font-size: 1.5rem;
-      font-weight: 500;
-      margin-left: 1rem;
+
+    .header-inner {
+      width: min(1280px, 100%);
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      padding: 0.35rem 1rem;
     }
-    
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      color: #0f172a;
+      text-decoration: none;
+    }
+
+    .brand-icon {
+      width: 2rem;
+      height: 2rem;
+      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      background: linear-gradient(135deg, #0891b2, #2563eb);
+      box-shadow: 0 8px 18px rgba(37, 99, 235, 0.28);
+    }
+
+    .brand-text {
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+    }
+
     .flex-spacer {
       flex: 1 1 auto;
     }
-    
+
+    .desktop-nav {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.2rem;
+    }
+
+    .desktop-nav a[mat-button] {
+      border-radius: 10px;
+      color: #1e293b;
+    }
+
+    .desktop-nav a[mat-button] mat-icon {
+      margin-right: 0.25rem;
+    }
+
+    .active-link {
+      background: #e2e8f0;
+      color: #0f172a;
+    }
+
+    .guest-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .mobile-menu-btn {
+      display: none;
+    }
+
+    .user-btn {
+      margin-left: 0.25rem;
+    }
+
     .main-content {
       flex: 1;
-      padding: 2rem;
-      background-color: #f5f5f5;
+      position: relative;
+      z-index: 1;
+      padding: 1.1rem;
     }
-    
-    .active {
-      background-color: rgba(255, 255, 255, 0.1);
+
+    .content-shell {
+      width: min(1280px, 100%);
+      margin: 0 auto;
     }
-    
-    button[mat-button] {
-      margin: 0 0.25rem;
-    }
-    
-    @media (max-width: 768px) {
-      .app-title {
+
+    @media (max-width: 1024px) {
+      .desktop-nav {
         display: none;
       }
-      
-      .main-content {
-        padding: 1rem;
+
+      .mobile-menu-btn {
+        display: inline-flex;
       }
-      
-      button[mat-button] span {
+
+      .guest-actions a[mat-button] span {
+        display: none;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .header-inner {
+        padding-inline: 0.45rem;
+      }
+
+      .brand-text {
         display: none;
       }
     }

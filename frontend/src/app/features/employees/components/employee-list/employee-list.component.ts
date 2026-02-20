@@ -39,7 +39,12 @@ import { finalize, retry } from 'rxjs';
     MatChip
   ],
   template: `
-    <div class="employee-list-container">
+    <div class="employee-list-container page-enter">
+      <div class="page-header">
+        <h1>Employees</h1>
+        <p>Monitor team status, departments, and monthly meal budget performance.</p>
+      </div>
+
       <!-- Search and Filters -->
       <mat-card class="filter-card">
         <mat-card-content>
@@ -88,11 +93,14 @@ import { finalize, retry } from 'rxjs';
       <!-- Employees Table -->
       <mat-card class="table-card">
         <mat-card-content>
-          <div *ngIf="isLoading" class="loading-container">
-            <mat-spinner diameter="40"></mat-spinner>
+          <div *ngIf="isLoading" class="table-skeleton">
+            <div class="skeleton skeleton-line lg"></div>
+            <div class="skeleton-row" *ngFor="let _ of [1,2,3,4,5,6]">
+              <div class="skeleton skeleton-line"></div>
+            </div>
           </div>
           
-          <div class="table-container">
+          <div class="table-container" *ngIf="!isLoading">
             <table mat-table 
                    [dataSource]="employees" 
                    matSort 
@@ -177,18 +185,34 @@ import { finalize, retry } from 'rxjs';
   `,
   styles: [`
     .employee-list-container {
-      padding: 2rem;
-      max-width: 1400px;
+      padding: 0.5rem;
+      max-width: 1280px;
       margin: 0 auto;
     }
 
+    .page-header {
+      margin-bottom: 0.9rem;
+    }
+
+    .page-header h1 {
+      margin: 0;
+      font-size: 1.45rem;
+      font-weight: 700;
+    }
+
+    .page-header p {
+      margin: 0.3rem 0 0;
+      color: #64748b;
+      font-size: 0.92rem;
+    }
+
     .filter-card {
-      margin-bottom: 2rem;
+      margin-bottom: 0.9rem;
     }
 
     .filter-row {
       display: flex;
-      gap: 1rem;
+      gap: 0.75rem;
       align-items: center;
       flex-wrap: wrap;
     }
@@ -199,18 +223,22 @@ import { finalize, retry } from 'rxjs';
     }
 
     .filter-field {
-      min-width: 150px;
+      min-width: 170px;
     }
 
     .table-card {
-      margin-bottom: 2rem;
+      margin-bottom: 1rem;
     }
 
-    .loading-container {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 200px;
+    .table-skeleton {
+      display: grid;
+      gap: 0.55rem;
+      padding: 0.25rem 0 0.5rem;
+    }
+
+    .skeleton-row {
+      display: grid;
+      gap: 0.35rem;
     }
 
     .table-container {
@@ -220,6 +248,17 @@ import { finalize, retry } from 'rxjs';
     table {
       width: 100%;
       min-width: 1000px;
+    }
+
+    th.mat-mdc-header-cell {
+      color: #334155;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    td.mat-mdc-cell {
+      color: #1f2937;
     }
 
     .mat-mdc-button {
@@ -235,11 +274,11 @@ import { finalize, retry } from 'rxjs';
       .search-field,
       .filter-field {
         min-width: auto;
-        margin-bottom: 1rem;
+        margin-bottom: 0.3rem;
       }
-      
+
       .employee-list-container {
-        padding: 1rem;
+        padding: 0.25rem;
       }
     }
   `]

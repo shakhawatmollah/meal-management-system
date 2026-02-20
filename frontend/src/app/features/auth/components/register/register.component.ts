@@ -124,9 +124,10 @@ import { withLoading } from '../../../../shared/services/loading.operator';
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      min-height: 100vh;
+      min-height: calc(100dvh - 8.5rem);
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      padding: 2rem;
+      padding: 1.25rem;
+      box-sizing: border-box;
     }
 
     .register-card {
@@ -166,7 +167,8 @@ import { withLoading } from '../../../../shared/services/loading.operator';
 
     @media (max-width: 480px) {
       .register-container {
-        padding: 1rem;
+        min-height: calc(100dvh - 7.5rem);
+        padding: 0.9rem;
       }
       
       .register-card {

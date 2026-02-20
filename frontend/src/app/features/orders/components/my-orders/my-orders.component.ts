@@ -30,12 +30,13 @@ import { finalize, retry } from 'rxjs';
     MatChip
   ],
   template: `
-    <div class="my-orders-container">
+    <div class="my-orders-container page-enter">
       <mat-card>
         <mat-card-header>
           <mat-card-title>My Orders</mat-card-title>
         </mat-card-header>
         <mat-card-content>
+          <p class="page-subtitle">Review your latest meals, order status, and spending history.</p>
           <div class="actions">
             <button mat-raised-button color="primary" (click)="createNewOrder()">
               <mat-icon>add</mat-icon>
@@ -43,11 +44,14 @@ import { finalize, retry } from 'rxjs';
             </button>
           </div>
           
-          <div *ngIf="isLoading" class="loading-container">
-            <mat-spinner diameter="40"></mat-spinner>
+          <div *ngIf="isLoading" class="table-skeleton">
+            <div class="skeleton skeleton-line lg"></div>
+            <div class="skeleton-row" *ngFor="let _ of [1,2,3,4,5]">
+              <div class="skeleton skeleton-line"></div>
+            </div>
           </div>
           
-          <div class="table-container" *ngIf="orders.length > 0">
+          <div class="table-container" *ngIf="!isLoading && orders.length > 0">
             <table mat-table [dataSource]="orders" matSort>
               <ng-container matColumnDef="id">
                 <th mat-header-cell *matHeaderCellDef mat-sort-header>Order ID</th>
@@ -121,20 +125,30 @@ import { finalize, retry } from 'rxjs';
   `,
   styles: [`
     .my-orders-container {
-      padding: 2rem;
+      padding: 0.5rem;
       max-width: 1200px;
       margin: 0 auto;
     }
 
-    .actions {
-      margin-bottom: 1rem;
+    .page-subtitle {
+      margin: 0.15rem 0 0.9rem;
+      color: #64748b;
+      font-size: 0.9rem;
     }
 
-    .loading-container {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 200px;
+    .actions {
+      margin-bottom: 0.9rem;
+    }
+
+    .table-skeleton {
+      display: grid;
+      gap: 0.55rem;
+      padding: 0.25rem 0 0.5rem;
+    }
+
+    .skeleton-row {
+      display: grid;
+      gap: 0.35rem;
     }
 
     .table-container {
@@ -146,9 +160,23 @@ import { finalize, retry } from 'rxjs';
       min-width: 800px;
     }
 
+    th.mat-mdc-header-cell {
+      color: #334155;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    td.mat-mdc-cell {
+      color: #1f2937;
+    }
+
     .empty-state {
       text-align: center;
-      padding: 3rem;
+      padding: 2rem 1rem;
+      border: 1px dashed #cfe0f2;
+      border-radius: 14px;
+      background: linear-gradient(150deg, #ffffff 0%, #f0f9ff 100%);
     }
 
     .empty-icon {
@@ -156,7 +184,8 @@ import { finalize, retry } from 'rxjs';
       width: 4rem;
       height: 4rem;
       margin-bottom: 1rem;
-      opacity: 0.5;
+      color: #0284c7;
+      opacity: 0.85;
     }
 
     .mat-mdc-button {
@@ -165,7 +194,7 @@ import { finalize, retry } from 'rxjs';
 
     @media (max-width: 768px) {
       .my-orders-container {
-        padding: 1rem;
+        padding: 0.25rem;
       }
       
       .table-container {
